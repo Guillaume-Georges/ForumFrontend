@@ -1,12 +1,33 @@
-# React + Vite
+# Forum Polling App 🗳️
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A full-stack forum application with support for voting on polls, adding custom poll options, commenting, and admin moderation.
 
-Currently, two official plugins are available:
+## 🔧 Tech Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Frontend:** React
+- **Backend:** Node.js + Express
+- **Database:** MySQL
+- **Auth:** Auth0
+- **Media Uploads:** Cloudinary
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend using TypeScript and enable type-aware lint rules. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## 🚀 Features
+
+- View forum posts with text, media, and polls
+- Vote or unvote on polls (including adding your own options if enabled)
+- Inline comments with vote support
+- Admins can delete any post or comment
+- Optimistic UI updates for fast user experience
+
+---
+
+## 🛠️ Getting Started
+
+### 1. Clone the repository and run the app
+You need the backend running
+
+```bash
+git clone https://github.com/Guillaume-Georges/ForumFrontend.git
+cd frontend
+npm run dev
