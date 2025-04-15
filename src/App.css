@@ -1,0 +1,240 @@
+/* App.css */
+
+/* GLOBAL RESET (optional) */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: sans-serif;
+  background: #f5f5f5;
+  color: #333;
+}
+
+/* Header styles */
+.header {
+  background: white;
+  padding: 1rem;
+  border-bottom: 1px solid #ddd;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header-logo {
+  display: flex;
+  align-items: center;
+  
+}
+
+.header-logo img {
+  height: 150px;
+  margin-right: 8px;
+}
+
+.header-search {
+  margin: 0 1rem;
+  flex: 1;
+  max-width: 400px;
+  display: flex;
+  position: relative;
+}
+
+.header-search input {
+  width: 100%;
+  padding: 0.5rem 2.5rem 0.5rem 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 20px;
+}
+
+.header-profile {
+  margin-left: 1rem;
+}
+
+/* NavBar styles */
+.navbar {
+  background: #fefefe;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+}
+
+.navbar-tabs {
+  display: flex;
+  flex: 1;
+}
+
+.navbar-tabs button {
+  background: none;
+  border: none;
+  padding: 0.5rem 1rem;
+  margin-right: 1rem;
+  cursor: pointer;
+  font-weight: 500;
+  border-bottom: 2px solid transparent;
+}
+
+.navbar-tabs button.active {
+  border-bottom: 2px solid #000; /* highlight current tab */
+}
+
+.navbar-sort {
+  margin-right: 1rem;
+}
+
+.navbar-addpost {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+
+
+/* PostCard styles */
+.post-card {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  margin-bottom: 1rem;
+  padding: 1.5rem;
+  font-size: 1rem;
+}
+
+.post-card-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+}
+
+.user-avatar {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  margin-right: 0.75rem;
+  object-fit: cover;
+}
+
+.user-details {
+  font-size: 0.9rem;
+}
+
+.follow-btn {
+  border: 1px solid #0f7bff;
+  background: none;
+  color: #0f7bff;
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.post-card-title {
+  font-weight: bold;
+  font-size: 1.2rem; /* slightly larger heading */
+  margin-bottom: 0.75rem;
+}
+
+.post-card-description {
+  font-size: 0.9rem;
+  color: #555;
+  margin-bottom: 1rem;
+}
+
+/* PollBar - just placeholders */
+.poll-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.poll-option {
+  background: #eee;
+  height: 6px;
+  border-radius: 3px;
+  position: relative;
+}
+
+.poll-option-filled {
+  background: #ff5252; /* different color for each option if desired */
+  height: 6px;
+  border-radius: 3px;
+}
+
+.post-card-footer {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: #999;
+}
+
+.layout {
+  width: 100%;
+  max-width: none; /* or 1600px if you prefer a bigger cap */
+  margin: 0 auto;  /* still keeps it centered if there's any bigger parent */
+  display: flex;
+  gap: 1.5rem;
+  padding: 1rem;
+}
+
+/* Left column, 2/3 width. We'll let flex do the ratio */
+.feed {
+  flex: 3;           /* 2 shares of the total available space */
+}
+
+/* Right column, 1/3 width */
+.sidebar {
+  flex: 1;           /* 1 share of the total available space */
+}
+
+.post-card-image {
+  width: 100%;
+  height: auto;
+  margin-bottom: 1rem;
+  border-radius: 8px;
+  object-fit: cover; /* if you want a fixed-height approach, set height and use cover */
+}
+
+.comment-block {
+  position: relative;
+  padding: 0.5rem;
+  border-radius: 6px;
+  transition: background 0.2s;
+  margin-bottom: 1rem; /* space between comments */
+}
+
+.comment-block:hover {
+  background: #f2f2f2;
+}
+
+.comment-delete {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  font-size: 0.75rem;
+  color: red;
+  cursor: pointer;
+  display: none;
+}
+
+.comment-block:hover .comment-delete {
+  display: inline;
+}
+
+.post-media {
+  width: 100%;
+  max-height: 400px;      /* ⬅️ Limits vertical size */
+  object-fit: contain;    /* Preserves aspect ratio without cropping */
+  border-radius: 8px;
+  margin-top: 0.5rem;
+}
+
