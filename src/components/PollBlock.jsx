@@ -1,43 +1,45 @@
-//PollBlock.jsx
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import PersonImage from '../assets/PersonIcon.png';
+import PollContext from '../context/PollContext';
 
-function PollBlock({ poll, postId, userId, onVote, onCustomVote, error, syncing }) {
+function PollBlock({ poll, postId, userId }) {
+  const { syncingPolls, pollSyncErrors, handleVote, handleCustomVote } = useContext(PollContext);
   const [customOptionText, setCustomOptionText] = useState('');
+
   const totalVotes = poll.options.reduce((sum, o) => sum + o.vote_count, 0);
   const votedOption = poll.options.find(opt => opt.user_voted);
   const hasVoted = Boolean(votedOption);
+  const syncing = syncingPolls.has(poll.id);
+  const error = pollSyncErrors.get(poll.id);
 
-  const handleVote = (optionId) => {
+  const handleVoteClick = (optionId) => {
     if (userId === 0) {
       alert('Please log in to vote.');
       return;
     }
 
+    if (syncing) return;
+
     if (optionId === votedOption?.id) {
-      onVote(postId, poll.id, null, userId);
+      handleVote(postId, poll.id, null, userId);
     } else if (!hasVoted) {
-      onVote(postId, poll.id, optionId, userId);
+      handleVote(postId, poll.id, optionId, userId);
     } else {
       alert('Unvote before voting again.');
     }
   };
 
-  const handleCustomVote = () => {
-    if (!customOptionText.trim()) return;
-    onCustomVote(postId, poll.id, userId, customOptionText);
+  const handleCustomOptionVote = () => {
+    if (!customOptionText.trim() || syncing) return;
+    handleCustomVote(postId, poll.id, userId, customOptionText);
     setCustomOptionText('');
   };
-  console.log('Options being rendered:', poll.options);
 
   return (
     <div style={{ background: '#fafafa', padding: '1rem', borderRadius: '8px' }}>
       <strong style={{ display: 'block', marginBottom: '0.75rem' }}>
         Poll: {poll.question}
       </strong>
-
-      
-
 
       {poll.options.filter(option => !(option.additional_option && option.vote_count === 0)).map(option => {
         const barPercent = totalVotes === 0 ? 0 : (option.vote_count / totalVotes) * 100;
@@ -91,7 +93,7 @@ function PollBlock({ poll, postId, userId, onVote, onCustomVote, error, syncing 
 
               {!hasVoted || option.id === votedOption?.id ? (
                 <button
-                  onClick={() => handleVote(option.id)}
+                  onClick={() => handleVoteClick(option.id)}
                   style={{
                     marginLeft: '1rem',
                     padding: '0.25rem 0.5rem',
@@ -100,6 +102,7 @@ function PollBlock({ poll, postId, userId, onVote, onCustomVote, error, syncing 
                     borderRadius: '4px',
                     cursor: 'pointer'
                   }}
+                  disabled={syncing}
                 >
                   {option.user_voted ? 'Unvote' : 'Vote'}
                 </button>
@@ -125,7 +128,7 @@ function PollBlock({ poll, postId, userId, onVote, onCustomVote, error, syncing 
             }}
           />
           <button
-            onClick={handleCustomVote}
+            onClick={handleCustomOptionVote}
             style={{
               padding: '0.25rem 0.75rem',
               background: '#28a745',
@@ -133,6 +136,7 @@ function PollBlock({ poll, postId, userId, onVote, onCustomVote, error, syncing 
               border: 'none',
               borderRadius: '4px'
             }}
+            disabled={syncing}
           >
             Vote
           </button>

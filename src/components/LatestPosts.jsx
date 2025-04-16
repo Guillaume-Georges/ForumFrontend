@@ -1,25 +1,23 @@
 // LatestPosts.jsx
-import React from 'react'
-import PostCard from './PostCard'
+import React from 'react';
+import PostCard from './PostCard';
 
-function LatestPosts({ posts, onVote, userId, onPostDeleted, localUser, onCustomVote, syncingPolls, pollSyncErrors }) {
+function LatestPosts({ posts, userId, onPostDeleted, localUser }) {
   return (
     <div>
       <h3>Latest Posts</h3>
-      {posts.map((post) => (
+      {posts.map(post => (
         <PostCard
           key={post.id}
           post={post}
           userId={userId}
-          onVote={onVote}
-          onCustomVote={onCustomVote} 
           onPostDeleted={onPostDeleted}
-          localUser={localUser} 
-          syncingPolls={syncingPolls}
-          pollSyncErrors={pollSyncErrors}
+          localUser={localUser}
+          showComments={false} // explicitly hide comments
         />
       ))}
     </div>
-  )
+  );
 }
-export default LatestPosts
+
+export default LatestPosts;

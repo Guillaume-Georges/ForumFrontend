@@ -205,30 +205,35 @@ body {
 }
 
 .comment-block {
-  position: relative;
   padding: 0.5rem;
-  border-radius: 6px;
-  transition: background 0.2s;
-  margin-bottom: 1rem; /* space between comments */
+  border-bottom: 1px solid #eee;
+  display: flex;
+  gap: 0.75rem;
 }
 
-.comment-block:hover {
-  background: #f2f2f2;
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
 }
 
-.comment-delete {
-  position: absolute;
-  top: 4px;
-  right: 6px;
-  font-size: 0.75rem;
-  color: red;
+.comment-content {
+  flex: 1;
+}
+
+.comment-content button {
+  background: #ddd;
+  border: none;
+  border-radius: 4px;
+  padding: 2px 8px;
+  margin-top: 0.5rem;
   cursor: pointer;
-  display: none;
 }
 
-.comment-block:hover .comment-delete {
-  display: inline;
+.comment-content button:hover {
+  background: #ccc;
 }
+
 
 .post-media {
   width: 100%;

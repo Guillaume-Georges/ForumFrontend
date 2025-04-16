@@ -8,6 +8,8 @@ import NavBar from './components/NavBar'
 import HomePage from './pages/HomePage'
 import CreatePost from './pages/CreatePost'
 import ProfilePage from './pages/ProfilePage';
+import { PollProvider } from './context/PollContext';
+import PublicProfilePage from './pages/PublicProfilePage';
 
 
 function App() {
@@ -52,6 +54,7 @@ function App() {
   
 
   return (
+    <PollProvider localUser={localUser}>
     <BrowserRouter>
       <Header localUser={localUser} />
       <NavBar />
@@ -59,8 +62,10 @@ function App() {
         <Route path="/" element={<HomePage localUser={localUser} />} />
         <Route path="/create-post" element={<CreatePost localUser={localUser} />} />
         <Route path="/profile" element={<ProfilePage localUser={localUser} authUser={user} />} />
+        <Route path="/profile/:userId" element={<PublicProfilePage localUser={localUser} />} /> 
       </Routes>
     </BrowserRouter>
+    </PollProvider>
   )
 }
 
