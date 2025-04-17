@@ -230,6 +230,78 @@ body {
   cursor: pointer;
 }
 
+/* Post Card Header */
+.post-card-header {
+  display: flex;
+  justify-content: space-between; /* separates author and votes nicely */
+  align-items: center;            /* vertical alignment */
+  margin-bottom: 1rem;
+}
+
+/* User info flex adjustment */
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* Vote column adjustments */
+.vote-col {
+  display: flex;
+  flex-direction: row;  /* horizontal orientation */
+  align-items: center;
+  gap: 0.25rem;         /* spacing between buttons */
+  background-color: #f8f9fa;
+  border-radius: 20px;
+  padding: 0.25rem 0.5rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* Vote buttons styling */
+.vote-btn {
+  border: none;
+  background: transparent;
+  font-size: 1rem;
+  width: 28px;
+  height: 28px;
+  line-height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+  color: #999;
+  transition: all 0.2s ease;
+}
+
+.vote-btn.up:hover {
+  background: #e8f5e9;
+  color: #43a047;
+}
+
+.vote-btn.down:hover {
+  background: #ffebee;
+  color: #e53935;
+}
+
+.vote-btn.up.voted {
+  background: #43a047;
+  color: white;
+  box-shadow: 0 2px 6px rgba(67,160,71,0.3);
+}
+
+.vote-btn.down.voted {
+  background: #e53935;
+  color: white;
+  box-shadow: 0 2px 6px rgba(229,57,53,0.3);
+}
+
+.score {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #555;
+  padding: 0 0.25rem;
+}
+
+
+
 .comment-content button:hover {
   background: #ccc;
 }

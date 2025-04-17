@@ -10,6 +10,7 @@ import CreatePost from './pages/CreatePost'
 import ProfilePage from './pages/ProfilePage';
 import { PollProvider } from './context/PollContext';
 import PublicProfilePage from './pages/PublicProfilePage';
+import { PostProvider } from './context/PostContext'; 
 
 
 function App() {
@@ -54,18 +55,21 @@ function App() {
   
 
   return (
+    <PostProvider localUser={localUser}>
     <PollProvider localUser={localUser}>
-    <BrowserRouter>
-      <Header localUser={localUser} />
-      <NavBar />
-      <Routes>
-        <Route path="/" element={<HomePage localUser={localUser} />} />
-        <Route path="/create-post" element={<CreatePost localUser={localUser} />} />
-        <Route path="/profile" element={<ProfilePage localUser={localUser} authUser={user} />} />
-        <Route path="/profile/:userId" element={<PublicProfilePage localUser={localUser} />} /> 
-      </Routes>
-    </BrowserRouter>
+      
+        <BrowserRouter>
+          <Header localUser={localUser} />
+          <NavBar />
+          <Routes>
+            <Route path="/" element={<HomePage localUser={localUser} />} />
+            <Route path="/create-post" element={<CreatePost localUser={localUser} />} />
+            <Route path="/profile" element={<ProfilePage localUser={localUser} authUser={user} />} />
+            <Route path="/profile/:userId" element={<PublicProfilePage localUser={localUser} />} /> 
+          </Routes>
+        </BrowserRouter>
     </PollProvider>
+    </PostProvider>
   )
 }
 
