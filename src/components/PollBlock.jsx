@@ -1,8 +1,10 @@
-import React, { useState, useContext } from 'react';
+//frontend\src\components\PollBlock.jsx 
+import React, { useState, useContext, useEffect } from 'react';
 import PersonImage from '../assets/PersonIcon.png';
 import PollContext from '../context/PollContext';
 
 function PollBlock({ poll, postId, userId }) {
+
   const { syncingPolls, pollSyncErrors, handleVote, handleCustomVote } = useContext(PollContext);
   const [customOptionText, setCustomOptionText] = useState('');
 

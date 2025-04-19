@@ -1,157 +1,240 @@
-import React, { createContext, useState, useCallback, useEffect } from 'react';
+import React, { createContext, useState, useCallback, useEffect, useContext, useRef, } from 'react';
 import api from '../api';
+import PostContext from './PostContext';
+
 
 const PollContext = createContext();
 
 export const PollProvider = ({ localUser, children }) => {
-  const [posts, setPosts] = useState([]);
-  const [syncingPolls, setSyncingPolls] = useState(new Set());
+  /** ------- consume posts from PostContext (no own fetch) -------- */
+  const {
+    posts,
+    latestPosts,
+    setPosts,
+    setLatestPosts,
+  } = useContext(PostContext);
+
+  const [syncingPolls,  setSyncingPolls]  = useState(new Set());
   const [pollSyncErrors, setPollSyncErrors] = useState(new Map());
+  
 
+  /** ------- enrich posts with poll‑vote data whenever feeds load -- */
   useEffect(() => {
-    async function fetchPostsAndVotes() {
+    // run only once the feeds are loaded *and* a user is known
+    if (!localUser) return;
+    if (posts.length === 0 && latestPosts.length === 0) return;
+
+    const combined = [...posts, ...latestPosts];
+    const pollIds  = combined.filter(p => p.poll?.id).map(p => p.poll.id);
+    if (pollIds.length === 0) return;
+
+    let cancelled = false;
+
+    (async () => {
       try {
-        const res = await api.get('/posts/get');
-        const fetchedPosts = res.data;
-
-        const pollIds = fetchedPosts.filter(p => p.poll?.id).map(p => p.poll.id);
-        if (pollIds.length === 0) {
-          setPosts(fetchedPosts);
-          return;
-        }
-
-        const voteRes = await api.post('/polls/votes/all', { poll_ids: pollIds });
-        const votes = voteRes.data;
-
-        const enrichedPosts = fetchedPosts.map(post => {
-          if (!post.poll) return post;
-          const updatedOptions = post.poll.options.map(opt => ({
-            ...opt,
-            voters: votes.filter(v => v.poll_id === post.poll.id && v.option_id === opt.id),
-            user_voted: localUser ? votes.some(v => v.user_id === localUser.id && v.option_id === opt.id) : false,
-          }));
-          return { ...post, poll: { ...post.poll, options: updatedOptions } };
+        const { data: votes } = await api.post('/polls/votes/all', {
+          poll_ids: pollIds,
         });
 
-        setPosts(enrichedPosts);
-      } catch (err) {
-        console.error('Failed to load posts/votes:', err);
-      }
-    }
+        const enrich = post => {
+          if (!post.poll) return post;
+           const updatedOptions = post.poll.options.map(opt => {
+               // all votes for *this* option
+               const optionVotes = votes.filter(
+                 v => v.poll_id === post.poll.id && v.option_id === opt.id
+               );
 
-    fetchPostsAndVotes();
-  }, [localUser]);
-
-  const handleVote = useCallback(async (postId, pollId, optionId, userId) => {
-    setSyncingPolls(prev => new Set(prev).add(pollId));
-
-    setPosts(prev =>
-      prev.map(post => {
-        if (post.id !== postId || !post.poll) return post;
-
-        const updatedOptions = post.poll.options.map(opt => {
-          const voters = opt.voters.filter(v => v.user_id !== userId);
-
-          if (optionId === null) { // Unvote
-            return {
-              ...opt,
-              voters,
-              user_voted: false,
-              vote_count: opt.user_voted ? opt.vote_count - 1 : opt.vote_count,
-            };
-          }
-
-          if (opt.id === optionId) {
-            return {
-              ...opt,
-              voters: [...voters, {
-                user_id: userId,
-                user_name: localUser.name,
-                profile_image: localUser.profile_image
-              }],
-              user_voted: true,
-              vote_count: opt.vote_count + 1,
-            };
-          }
-
-          return { ...opt, voters, user_voted: false };
-        }).filter(opt => !(opt.additional_option && opt.vote_count === 0));
-
-        return { ...post, poll: { ...post.poll, options: updatedOptions } };
-      })
-    );
-
-    try {
-      if (optionId === null) {
-        await api.delete(`/polls/${pollId}/vote`, { data: { user_id: userId } });
-      } else {
-        await api.post(`/polls/${pollId}/vote`, { user_id: userId, option_id: optionId });
-      }
-      setPollSyncErrors(prev => {
-        const updated = new Map(prev);
-        updated.delete(pollId);
-        return updated;
-      });
-    } catch (err) {
-      setPollSyncErrors(prev => new Map(prev).set(pollId, 'Vote sync failed'));
-      console.error(err);
-    } finally {
-      setSyncingPolls(prev => {
-        const updated = new Set(prev);
-        updated.delete(pollId);
-        return updated;
-      });
-    }
-  }, [localUser]);
-
-  const handleCustomVote = useCallback(async (postId, pollId, userId, newOptionText) => {
-    setSyncingPolls(prev => new Set(prev).add(pollId));
-
-    try {
-      const response = await api.post(`/polls/${pollId}/vote`, { user_id: userId, new_option_text: newOptionText });
-      const newOptionId = response.data.optionId;
-
-      setPosts(prev => prev.map(post => {
-        if (post.id !== postId || !post.poll) return post;
-
-        const resetOptions = post.poll.options.map(opt => ({
-          ...opt,
-          voters: opt.voters.filter(v => v.user_id !== userId),
-          user_voted: false,
-          vote_count: opt.user_voted ? opt.vote_count - 1 : opt.vote_count
-        })).filter(opt => !(opt.additional_option && opt.vote_count === 0));
-
-        const newOption = {
-          id: newOptionId,
-          text: newOptionText,
-          vote_count: 1,
-          user_voted: true,
-          additional_option: true,
-          voters: [{ user_id: userId, user_name: localUser.name, profile_image: localUser.profile_image }]
+               // If the endpoint didn’t include this option (e.g., custom option),
+              // keep whatever the post already had.
+              const voters = optionVotes.length > 0 ? optionVotes : (opt.voters ?? []);
+            
+               return {
+                 ...opt,
+                 voters,                        
+                 user_voted: voters.some(
+                   v => v.user_id === localUser.id
+                 ),
+               };
+             });
+          return { ...post, poll: { ...post.poll, options: updatedOptions } };
         };
 
-        return { ...post, poll: { ...post.poll, options: [...resetOptions, newOption] } };
-      }));
+        /* replace arrays only if at least one object reference changes */
+        const replaceIfChanged = (prev, next) =>
+        next.some((p, i) => p !== prev[i]) ? next : prev;
 
-      setPollSyncErrors(prev => {
-        const updated = new Map(prev);
-        updated.delete(pollId);
-        return updated;
-      });
-    } catch (err) {
-      setPollSyncErrors(prev => new Map(prev).set(pollId, 'Custom option sync failed'));
-      console.error(err);
-    } finally {
-      setSyncingPolls(prev => {
-        const updated = new Set(prev);
-        updated.delete(pollId);
-        return updated;
-      });
-    }
-  }, [localUser]);
+        if (!cancelled) {
+          setPosts(prev => replaceIfChanged(prev, prev.map(enrich)));
+          setLatestPosts(prev => replaceIfChanged(prev, prev.map(enrich)));
+        }
+      } catch (err) {
+        console.error('Failed to load poll votes:', err);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [localUser, posts.length, latestPosts.length]);;
+
+  const handleVote = useCallback(
+    async (postId, pollId, optionId, userId) => {
+      setSyncingPolls(prev => new Set(prev).add(pollId));
+  
+      const optimisticUpdate = list =>
+        list.map(post => {
+          if (post.id !== postId || !post.poll) return post;
+  
+          const updatedOptions = post.poll.options
+            .map(opt => {
+              const base   = Array.isArray(opt.voters) ? opt.voters : [];
+              const voters = base.filter(v => v.user_id !== userId);
+  
+              // un‑vote
+              if (optionId === null) {
+                return {
+                  ...opt,
+                  voters,
+                  user_voted: false,
+                  vote_count: opt.user_voted ? opt.vote_count - 1 : opt.vote_count,
+                };
+              }
+  
+              // regular vote
+              if (opt.id === optionId) {
+                return {
+                  ...opt,
+                  voters: [
+                    ...voters,
+                    {
+                      user_id: userId,
+                      user_name: localUser.name,
+                      profile_image: localUser.profile_image,
+                    },
+                  ],
+                  user_voted: true,
+                  vote_count: opt.vote_count + 1,
+                };
+              }
+  
+              return { ...opt, voters, user_voted: false };
+            })
+            .filter(opt => !(opt.additional_option && opt.vote_count === 0));
+  
+          return { ...post, poll: { ...post.poll, options: updatedOptions } };
+        });
+  
+      setPosts(optimisticUpdate);
+      setLatestPosts(optimisticUpdate);
+  
+      try {
+        if (optionId === null) {
+          await api.delete(`/polls/${pollId}/vote`, { data: { user_id: userId } });
+        } else {
+          await api.post(`/polls/${pollId}/vote`, { user_id: userId, option_id: optionId });
+        }
+        setPollSyncErrors(prev => { const m = new Map(prev); m.delete(pollId); return m; });
+      } catch (err) {
+        setPollSyncErrors(prev => new Map(prev).set(pollId, 'Vote sync failed'));
+        console.error(err);
+      } finally {
+        setSyncingPolls(prev => { const s = new Set(prev); s.delete(pollId); return s; });
+      }
+    },
+    [localUser, setPosts, setLatestPosts]
+  );
+
+  const handleCustomVote = useCallback(
+    async (postId, pollId, userId, newOptionText) => {
+      setSyncingPolls(prev => new Set(prev).add(pollId));
+  
+      /** pure helper that adds the new option + voter */
+      const optimistic = list =>
+        list.map(post => {
+          if (post.id !== postId || !post.poll) return post;
+  
+          const reset = post.poll.options
+            .map(opt => ({
+              ...opt,
+              voters:       (Array.isArray(opt.voters) ? opt.voters : [])
+                  .filter(v => v.user_id !== userId),
+              user_voted:   false,
+              vote_count:   opt.user_voted ? opt.vote_count - 1 : opt.vote_count,
+            }))
+            .filter(opt => !(opt.additional_option && opt.vote_count === 0));
+  
+          const newOption = {
+            id:               'temp',          // temp id until server returns real one
+            text:             newOptionText,
+            vote_count:       1,
+            user_voted:       true,
+            additional_option:true,
+            voters: [{
+              user_id: userId,
+              user_name: localUser.name,
+              profile_image: localUser.profile_image,
+            }],
+          };
+  
+          return {
+            ...post,
+            poll: { ...post.poll, options: [...reset, newOption] },
+          };
+        });
+  
+      // 👉 optimistic UI *before* hitting the network
+      setPosts(optimistic);
+      setLatestPosts(optimistic);
+  
+      try {
+        const { data } = await api.post(`/polls/${pollId}/vote`, {
+          user_id:        userId,
+          new_option_text:newOptionText,
+        });
+  
+        /* replace the temporary id with the real one the server returns */
+        const realId   = data.optionId;
+        const replaceTemp = list =>
+          list.map(post => {
+            if (post.id !== postId || !post.poll) return post;
+            const fixed = post.poll.options.map(opt =>
+              opt.id === 'temp' ? { ...opt, id: realId } : opt
+            );
+            return { ...post, poll: { ...post.poll, options: fixed } };
+          });
+        setPosts(replaceTemp);
+        setLatestPosts(replaceTemp);
+  
+        setPollSyncErrors(prev => {
+          const m = new Map(prev);
+          m.delete(pollId);
+          return m;
+        });
+      } catch (err) {
+        /* rollback on failure (optional—remove if you prefer to leave UI as‑is) */
+        console.error(err);
+        setPollSyncErrors(prev =>
+          new Map(prev).set(pollId, 'Custom option sync failed')
+        );
+      } finally {
+        setSyncingPolls(prev => {
+          const s = new Set(prev);
+          s.delete(pollId);
+          return s;
+        });
+      }
+    },
+    [localUser]
+  );
 
   return (
-    <PollContext.Provider value={{ posts, setPosts, syncingPolls, pollSyncErrors, handleVote, handleCustomVote }}>
+    <PollContext.Provider
+      value={{
+        syncingPolls,
+        pollSyncErrors,
+        handleVote,
+        handleCustomVote,
+        /* expose nothing else – posts now live in PostContext */
+      }}
+    >
       {children}
     </PollContext.Provider>
   );
