@@ -1,10 +1,7 @@
-// src/pages/PublicProfilePage.jsx
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../api';
-import PostCard from '../components/PostCard'; // Reuse the PostCard component
 import PersonImage from '../assets/PersonIcon.png'; // Default avatar
-import PollContext from '../context/PollContext'; // Needed for PostCard's context dependencies
 
 // Basic styling (consider moving to a CSS file)
 const styles = {
@@ -39,11 +36,6 @@ const styles = {
     fontWeight: 'bold',
     margin: '0 0 0.25rem 0',
   },
-  profileTitle: {
-    fontSize: '1.1rem',
-    color: '#555',
-    margin: 0,
-  },
   postsSection: {
     marginTop: '2rem',
   },
@@ -68,7 +60,7 @@ const styles = {
     textAlign: 'center',
     padding: '2rem',
     color: '#777',
-  }
+  },
 };
 
 function PublicProfilePage({ localUser }) {
@@ -80,12 +72,9 @@ function PublicProfilePage({ localUser }) {
   const [profileError, setProfileError] = useState(null);
   const [postsError, setPostsError] = useState(null);
 
-  // We might need PollContext here if PostCard deeply relies on it,
-  // even if this specific page doesn't directly use voting functions.
-  // Or refactor PostCard to conditionally use context.
-  const pollContext = useContext(PollContext);
-
   useEffect(() => {
+    console.log('Fetching profile and posts for user ID:', userId);
+
     // Reset states when userId changes
     setIsLoadingProfile(true);
     setIsLoadingPosts(true);
@@ -97,6 +86,7 @@ function PublicProfilePage({ localUser }) {
     // Fetch profile information
     api.get(`/users/${userId}`)
       .then(res => {
+        console.log('Profile fetched:', res.data);  // Log the profile data
         setProfileInfo(res.data);
         setProfileError(null);
       })
@@ -110,8 +100,9 @@ function PublicProfilePage({ localUser }) {
 
     // Fetch user's posts using the NEW backend route
     // IMPORTANT: Make sure this route exists on your backend!
-    api.get(`/users/post/${userId}`)
+    api.get(`/users/${userId}/posts`)
       .then(res => {
+        console.log('User posts fetched:', res.data);  // Log the posts data
         setUserPosts(res.data);
         setPostsError(null);
       })
@@ -122,33 +113,24 @@ function PublicProfilePage({ localUser }) {
       .finally(() => {
         setIsLoadingPosts(false);
       });
-
   }, [userId]); // Re-run fetches if the userId in the URL changes
 
-  const handlePostDeleted = (deletedPostId) => {
-    setUserPosts(prevPosts => prevPosts.filter(p => p.id !== deletedPostId));
-  };
-
-  // Loading States
+  // Add a loading state that waits until both profile and posts are loaded
   if (isLoadingProfile || isLoadingPosts) {
-    return <div style={styles.loading}>Loading profile...</div>;
+    return <div style={styles.loading}>Loading...</div>;
   }
 
-  // Error States
   if (profileError) {
     return <div style={styles.error}>{profileError}</div>;
   }
-  // If profile loaded but posts failed, show profile but indicate post error
-  // if (postsError) {
-  //   // You might want a more nuanced display here
-  //   return <div style={styles.error}>{postsError}</div>;
-  // }
 
-  if (!profileInfo) {
-     // Should generally be covered by loading/error states, but as a fallback
-    return <div style={styles.error}>Profile not found.</div>;
+  if (postsError) {
+    return <div style={styles.error}>{postsError}</div>;
   }
 
+  if (!profileInfo) {
+    return <div style={styles.error}>Profile not found.</div>;
+  }
 
   return (
     <div style={styles.container}>
@@ -161,31 +143,24 @@ function PublicProfilePage({ localUser }) {
         />
         <div style={styles.profileInfo}>
           <h1 style={styles.profileName}>{profileInfo.name}</h1>
-          {profileInfo.title && <p style={styles.profileTitle}>{profileInfo.title}</p>}
-          {/* Add more profile details here if needed, e.g., join date */}
+          {profileInfo.position && <p>{profileInfo.position}</p>}
         </div>
       </div>
 
       {/* Posts Section */}
       <div style={styles.postsSection}>
         <h2 style={styles.postsHeader}>{profileInfo.name}'s Posts</h2>
-        {postsError && <div style={{...styles.error, marginBottom: '1rem'}}>{postsError}</div>}
 
         {userPosts.length > 0 ? (
-          userPosts.map(post => (
-            <PostCard
-              key={post.id}
-              post={post}
-              // Pass the *viewer's* user ID for context (e.g., checking vote status, ownership for delete)
-              userId={localUser?.id}
-              localUser={localUser} 
-              onPostDeleted={handlePostDeleted}
-              showComments={true} 
-              hideAuthorInfo={true}
-            />
+          userPosts.map((post) => (
+            <div key={post.id} style={{ marginBottom: '1.5rem', padding: '1rem', border: '1px solid #ddd', borderRadius: '8px' }}>
+              <h3>{post.title}</h3>
+              <p>{post.description}</p>
+              <div style={{ color: '#777', fontSize: '0.9rem' }}>Posted on: {new Date(post.created_at).toLocaleDateString()}</div>
+            </div>
           ))
         ) : (
-           !postsError && <div style={styles.noPosts}>This user hasn't published any posts yet.</div>
+          <div style={styles.noPosts}>This user hasn't published any posts yet.</div>
         )}
       </div>
     </div>

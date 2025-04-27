@@ -1,11 +1,16 @@
+//frontend\src\components\PostCard.jsx
+
 import React, { useState, useEffect, useContext, useRef  } from 'react';
 import api from '../api';
+import { Link } from 'react-router-dom';
 import PersonImage from '../assets/PersonIcon.png';
 import PollBlock from './PollBlock'; 
 import PostContext from '../context/PostContext';
 import PollContext from '../context/PollContext';
+import CommentSection from './CommentSection';
 
-function PostCard({ post, userId, onVote, onPostDeleted, onCustomVote, localUser }) {
+
+function PostCard({ post, userId, onVote, onPostDeleted, onCustomVote, localUser, showComments = true }) {
   const optionsRef = useRef(); 
   const poll = post.poll;
   const [chosenOption, setChosenOption] = useState(null);
@@ -20,6 +25,7 @@ function PostCard({ post, userId, onVote, onPostDeleted, onCustomVote, localUser
 
   const { vote, updating } = useContext(PostContext);
   const { syncingPolls, pollSyncErrors } = useContext(PollContext);
+  const { loading } = useContext(PostContext);
 
   const busy = updating.has(post.id);
   const [score, setScore]   = useState(post.score);     // comes from backend
@@ -54,6 +60,8 @@ function PostCard({ post, userId, onVote, onPostDeleted, onCustomVote, localUser
   useEffect(() => {
     const voted = poll?.options?.find(opt => opt.user_voted);
     setChosenOption(voted?.id || null);
+
+    if (!showComments) return;
 
     // Fetch comments for this post
     api.get(`/comments/post/${post.id}`)
@@ -106,80 +114,7 @@ function PostCard({ post, userId, onVote, onPostDeleted, onCustomVote, localUser
     }
   }
 
-  const handleAddComment = async () => {
-    if (!userId || userId === 0) {
-      alert('Please log in to comment.');
-      return;
-    }
-  
-    if (!newComment.trim()) return;
-  
-    try {
-      const res = await api.post('/comments/create', {
-        post_id: post.id,
-        user_id: userId,
-        content: newComment
-      });
-  
-      const created = res.data;
-      // ensure the freshly‑created comment has the same shape we render
-      const newCommentWithMeta = {
-        ...created,
-        user_id:       userId,
-        user_name:     localUser.name,
-        profile_image: localUser.profile_image,
-      };
-     setComments(prev => [...prev, newCommentWithMeta]);
-      setNewComment('');
-    } catch (err) {
-      console.error('Failed to add comment:', err);
-    }
-  };
-  
 
-  
-  
-
-  const toggleCommentVote = async (comment) => {
-    if (!userId || userId === 0) {
-      alert('Please log in to vote on comments.');
-      return;
-    }
-  
-    const hasVoted = Array.isArray(comment.voters) && comment.voters.some(v => v.user_id === userId);
-  
-    try {
-      if (hasVoted) {
-        await api.delete(`/comments/${comment.id}/vote`, {
-          data: { user_id: userId }
-        });
-      } else {
-        await api.post(`/comments/${comment.id}/vote`, {
-          user_id: userId
-        });
-      }
-  
-      setComments(prev => prev.map(c => {
-        if (c.id !== comment.id) return c;
-  
-        const updatedVoters = hasVoted
-          ? (Array.isArray(c.voters) ? c.voters.filter(v => v.user_id !== userId) : [])
-          : [...(Array.isArray(c.voters) ? c.voters : []), { user_id: userId, user_name: 'You' }];
-  
-        const updatedVoteCount = hasVoted
-          ? Math.max((c.vote_count || 1) - 1, 0)
-          : (c.vote_count || 0) + 1;
-  
-        return {
-          ...c,
-          voters: updatedVoters,
-          vote_count: updatedVoteCount
-        };
-      }));
-    } catch (err) {
-      console.error('Failed to toggle comment vote:', err);
-    }
-  };
 
   const handleDeletePost = async () => {
     if (!window.confirm('Are you sure you want to delete this post?')) return;
@@ -196,28 +131,6 @@ function PostCard({ post, userId, onVote, onPostDeleted, onCustomVote, localUser
     }
   };
 
-  
-
-  const handleDeleteComment = async (commentId) => {
-    if (!window.confirm('Are you sure you want to delete this comment?')) return;
-  
-    try {
-      await api.delete(`/comments/delete/${commentId}`, {
-        data: {
-          user_id: userId,
-          is_admin: isAdmin 
-        }
-      });
-  
-      setComments(prev => prev.filter(c => c.id !== commentId));
-    } catch (err) {
-      console.error('Failed to delete comment:', err);
-      alert('Error deleting comment');
-    }
-  };
-
-  
-
     return (
       <div className="post-card">
         {/* ─────────── The header ─────────── */}
@@ -231,18 +144,21 @@ function PostCard({ post, userId, onVote, onPostDeleted, onCustomVote, localUser
         >
           {/* ← Left side: avatar + author */}
           <div className="user-info" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <Link to={`/profile/${post.user_id}`}>
             <img
-              src={post.profile_image}
+              src={post.profile_image || PersonImage}
               alt="User Avatar"
               className="user-avatar"
               referrerPolicy="no-referrer"
               onError={e => { e.target.onerror = null; e.target.src = PersonImage; }}
+              style={{ cursor: 'pointer' }}
             />
+            </Link>
             <div>
               <strong>{post.author}</strong>
-              {post.author_title && (
+              {post.author_position && (
                 <div style={{ fontSize: '0.8rem', color: '#666' }}>
-                  {post.author_title}
+                  {post.author_position}
                 </div>
               )}
             </div>
@@ -344,95 +260,16 @@ function PostCard({ post, userId, onVote, onPostDeleted, onCustomVote, localUser
       />
       
       )}
-
-
       {/* COMMENTS */}
-      <div style={{ marginTop: '1rem' }}>
-        <strong>Comments</strong>
-        <div>
-        {comments.map(c => {
-  const isOwner   = c.user_id === userId;
-  const isEditing = editingCommentId === c.id;
+      {showComments && (
+        <CommentSection
+          postId={post.id}
+          userId={userId}
+          localUser={localUser}
+        />
+      )}
 
-  return (
-    <div key={c.id} className="comment-block" style={{ display:'flex', gap:'0.5rem', marginBottom:'0.75rem' }}>
-      <img
-        src={c.profile_image}
-        alt="User Avatar"
-        className="user-avatar"
-        referrerPolicy="no-referrer"
-        onError={e => {
-          e.target.onerror = null;
-          e.target.src = PersonImage;
-        }}
-      />
-
-      <div style={{ flex: 1 }}>
-        <strong>{c.user_name}:</strong>
-
-        {isEditing ? (
-          <>
-            <input
-              value={editingContent}
-              onChange={e => setEditingContent(e.target.value)}
-              style={{ width:'100%', marginTop:'0.25rem' }}
-            />
-            <div style={{ marginTop:'0.25rem' }}>
-              <button onClick={() => saveEdit(c.id)}>Save</button>
-              <button onClick={() => setEditingCommentId(null)} style={{ marginLeft:'0.5rem' }}>
-                Cancel
-              </button>
-            </div>
-          </>
-        ) : (
-          <>
-            <span style={{ marginLeft:'0.5rem' }}>{c.content}</span>
-            <button onClick={() => toggleCommentVote(c)} style={{ marginLeft:'0.5rem' }}>
-              👍 {c.vote_count}
-            </button>
-
-            {isOwner && (
-              <>
-                <button onClick={() => startEditing(c)} style={{ marginLeft:'0.5rem' }}>
-                  Edit
-                </button>
-                <button onClick={() => handleDeleteComment(c.id)} style={{ marginLeft:'0.5rem', color:'red' }}>
-                  Delete
-                </button>
-              </>
-            )}
-          </>
-        )}
-      </div>
-    </div>
-  );
-})}
-
-        </div>
-
-        <div style={{ marginTop: '0.5rem' }}>
-          <input
-            type="text"
-            value={newComment}
-            onChange={e => setNewComment(e.target.value)}
-            placeholder="Write a comment..."
-            style={{ width: '80%', padding: '0.5rem' }}
-          />
-          <button
-            onClick={handleAddComment}
-            style={{
-              marginLeft: '0.5rem',
-              padding: '0.5rem 1rem',
-              background: '#007bff',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px'
-            }}
-          >
-            Post
-          </button>
-        </div>
-      </div>
+      
 
       <div className="post-card-footer">
         <div>10 comments</div>

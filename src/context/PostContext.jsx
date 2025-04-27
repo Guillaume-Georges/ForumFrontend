@@ -2,12 +2,14 @@
 import React, { createContext, useState, useEffect, useCallback } from 'react';
 import api from '../api';
 
+
 const PostContext = createContext({
   posts: [],
   latestPosts: [],
   vote:   () => {},
   updating: new Set(),
   errors:   new Map(),
+  loading: true,
   // setters exposed so PollContext can inject poll‑vote updates
   setPosts:       () => {},
   setLatestPosts: () => {},
@@ -20,6 +22,7 @@ export const PostProvider = ({ children, localUser }) => {
   const [latestPosts, setLatestPosts] = useState([]); // 5 newest
   const [updating,    setUpdating]    = useState(new Set());
   const [errors,      setErrors]      = useState(new Map());
+  const [loading, setLoading] = useState(true);
 
 
   /** ---------- fetch both feeds on mount / user change ----------- */
@@ -27,6 +30,7 @@ export const PostProvider = ({ children, localUser }) => {
     let cancelled = false;
 
     async function fetchFeeds() {
+      setLoading(true);
       try {
         const scoreParams  = { sortBy: 'votes',       ...(localUser && { user_id: localUser.id }) };
         const latestParams = { sortBy: 'date', limit: 5, ...(localUser && { user_id: localUser.id }) };
@@ -41,6 +45,8 @@ export const PostProvider = ({ children, localUser }) => {
         setLatestPosts(latestRes.data);
       } catch (err) {
         console.error('Failed to fetch posts:', err);
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     }
 
@@ -83,6 +89,7 @@ export const PostProvider = ({ children, localUser }) => {
       value={{
         posts,
         latestPosts,
+        loading,
         setPosts,
         setLatestPosts,
         vote,

@@ -5,7 +5,7 @@ import api from '../api';
 function ProfilePage({ localUser, authUser }) {
   const [profile, setProfile] = useState(null);
   const [name, setName] = useState('');
-  const [title, setTitle] = useState('');
+  const [position, setPosition] = useState('');
 
   useEffect(() => {
     if (!localUser?.id) return;
@@ -14,15 +14,22 @@ function ProfilePage({ localUser, authUser }) {
       .then(res => {
         setProfile(res.data);
         setName(res.data.name);
-        setTitle(res.data.title || '');
+        setPosition(res.data.position || '');
       })
       .catch(err => console.error('Failed to load profile:', err));
   }, [localUser]);
 
   const handleSave = () => {
-    api.put(`/users/${localUser.id}`, { name, title })
-      .then(() => alert('Profile updated!'))
-      .catch(err => alert('Error updating profile'));
+    api.put(`/users/${localUser.id}`, { 
+      name, 
+      position,
+      linkedin_url: profile?.linkedin_url,
+      facebook_url: profile?.facebook_url,
+      instagram_url: profile?.instagram_url,
+      website_url: profile?.website_url
+    })
+    .then(() => alert('Profile updated!'))
+    .catch(err => alert('Error updating profile'));
   };
 
   if (!profile) return <div>Loading profile...</div>;
@@ -41,10 +48,10 @@ function ProfilePage({ localUser, authUser }) {
       </div>
 
       <div style={{ marginBottom: '1rem' }}>
-        <label><strong>Title:</strong></label>
+        <label><strong>Position:</strong></label>
         <input
-          value={title}
-          onChange={e => setTitle(e.target.value)}
+          value={position}
+          onChange={e => setPosition(e.target.value)}
           placeholder="e.g. Secondary Teacher"
           style={{ width: '100%', padding: '0.5rem', marginTop: '0.25rem' }}
         />
@@ -58,6 +65,43 @@ function ProfilePage({ localUser, authUser }) {
           style={{ width: '100%', padding: '0.5rem', marginTop: '0.25rem', background: '#f0f0f0' }}
         />
       </div>
+
+      <div style={{ marginBottom: '1rem' }}>
+      <label><strong>LinkedIn:</strong></label>
+      <input
+        value={profile?.linkedin_url || ''}
+        onChange={e => setProfile({...profile, linkedin_url: e.target.value})}
+        style={{ width: '100%', padding: '0.5rem', marginTop: '0.25rem' }}
+      />
+    </div>
+
+    <div style={{ marginBottom: '1rem' }}>
+      <label><strong>Facebook:</strong></label>
+      <input
+        value={profile?.facebook_url || ''}
+        onChange={e => setProfile({...profile, facebook_url: e.target.value})}
+        style={{ width: '100%', padding: '0.5rem', marginTop: '0.25rem' }}
+      />
+    </div>
+
+    <div style={{ marginBottom: '1rem' }}>
+      <label><strong>Instagram:</strong></label>
+      <input
+        value={profile?.instagram_url || ''}
+        onChange={e => setProfile({...profile, instagram_url: e.target.value})}
+        style={{ width: '100%', padding: '0.5rem', marginTop: '0.25rem' }}
+      />
+    </div>
+
+    <div style={{ marginBottom: '1rem' }}>
+      <label><strong>Website:</strong></label>
+      <input
+        value={profile?.website_url || ''}
+        onChange={e => setProfile({...profile, website_url: e.target.value})}
+        style={{ width: '100%', padding: '0.5rem', marginTop: '0.25rem' }}
+      />
+    </div>
+
 
       <button
         onClick={handleSave}

@@ -5,6 +5,7 @@ import PostContext from './PostContext';
 
 const PollContext = createContext();
 
+
 export const PollProvider = ({ localUser, children }) => {
   /** ------- consume posts from PostContext (no own fetch) -------- */
   const {
@@ -12,68 +13,86 @@ export const PollProvider = ({ localUser, children }) => {
     latestPosts,
     setPosts,
     setLatestPosts,
+    loading,
   } = useContext(PostContext);
 
   const [syncingPolls,  setSyncingPolls]  = useState(new Set());
   const [pollSyncErrors, setPollSyncErrors] = useState(new Map());
+  const [pollsLoading, setPollsLoading] = useState(true);
+  const [pollsEnriched, setPollsEnriched] = useState(false);
   
 
-  /** ------- enrich posts with poll‑vote data whenever feeds load -- */
-  useEffect(() => {
-    // run only once the feeds are loaded *and* a user is known
-    if (!localUser) return;
-    if (posts.length === 0 && latestPosts.length === 0) return;
+/** ------- enrich posts with poll‑vote data whenever feeds load -- */
+useEffect(() => {
+    
+  // run only once the feeds are loaded *and* a user is known
+  if (!localUser || loading || pollsEnriched) return;
+  if (!posts.length && !latestPosts.length) {
+    setPollsLoading(false);
+    setPollsEnriched(true);
+    return;
+  }
 
-    const combined = [...posts, ...latestPosts];
-    const pollIds  = combined.filter(p => p.poll?.id).map(p => p.poll.id);
-    if (pollIds.length === 0) return;
+  const combined = [...posts, ...latestPosts];
+  const pollIds  = combined.filter(p => p.poll?.id).map(p => p.poll.id);
+  if (pollIds.length === 0) {
+    setPollsLoading(false); // 👈 Ensure it's false if no polls exist
+    setPollsEnriched(true);
+    return;
+  }
 
-    let cancelled = false;
+  let cancelled = false;
+  setPollsLoading(true);
 
-    (async () => {
-      try {
-        const { data: votes } = await api.post('/polls/votes/all', {
-          poll_ids: pollIds,
-        });
+  (async () => {
+    try {
+      const { data: votes } = await api.post('/polls/votes/all', {
+        poll_ids: pollIds,
+      });
 
-        const enrich = post => {
-          if (!post.poll) return post;
-           const updatedOptions = post.poll.options.map(opt => {
-               // all votes for *this* option
-               const optionVotes = votes.filter(
-                 v => v.poll_id === post.poll.id && v.option_id === opt.id
-               );
+      const enrich = post => {
+        if (!post.poll) return post;
+         const updatedOptions = post.poll.options.map(opt => {
+             // all votes for *this* option
+             const optionVotes = votes.filter(
+               v => v.poll_id === post.poll.id && v.option_id === opt.id
+             );
 
-               // If the endpoint didn’t include this option (e.g., custom option),
-              // keep whatever the post already had.
-              const voters = optionVotes.length > 0 ? optionVotes : (opt.voters ?? []);
-            
-               return {
-                 ...opt,
-                 voters,                        
-                 user_voted: voters.some(
-                   v => v.user_id === localUser.id
-                 ),
-               };
-             });
-          return { ...post, poll: { ...post.poll, options: updatedOptions } };
-        };
+             // If the endpoint didn’t include this option (e.g., custom option),
+            // keep whatever the post already had.
+            const voters = optionVotes.length > 0 ? optionVotes : (opt.voters ?? []);
+          
+             return {
+               ...opt,
+               voters,                        
+               user_voted: voters.some(
+                 v => v.user_id === localUser.id
+               ),
+             };
+           });
+        return { ...post, poll: { ...post.poll, options: updatedOptions } };
+      };
 
-        /* replace arrays only if at least one object reference changes */
-        const replaceIfChanged = (prev, next) =>
-        next.some((p, i) => p !== prev[i]) ? next : prev;
+      /* replace arrays only if at least one object reference changes */
+      const replaceIfChanged = (prev, next) =>
+      next.some((p, i) => p !== prev[i]) ? next : prev;
 
-        if (!cancelled) {
-          setPosts(prev => replaceIfChanged(prev, prev.map(enrich)));
-          setLatestPosts(prev => replaceIfChanged(prev, prev.map(enrich)));
-        }
-      } catch (err) {
-        console.error('Failed to load poll votes:', err);
+      if (!cancelled) {
+        setPosts(prev => replaceIfChanged(prev, prev.map(enrich)));
+        setLatestPosts(prev => replaceIfChanged(prev, prev.map(enrich)));
       }
-    })();
+    } catch (err) {
+      console.error('Failed to load poll votes:', err);
+    } finally {
+      if (!cancelled) {
+        setPollsLoading(false);
+        setPollsEnriched(true); // 👈 prevent further unnecessary calls
+      }
+    }
+  })();
 
-    return () => { cancelled = true; };
-  }, [localUser, posts.length, latestPosts.length]);;
+  return () => { cancelled = true; };
+}, [localUser, loading, pollsEnriched]);
 
   const handleVote = useCallback(
     async (postId, pollId, optionId, userId) => {
@@ -232,6 +251,8 @@ export const PollProvider = ({ localUser, children }) => {
         pollSyncErrors,
         handleVote,
         handleCustomVote,
+        pollsLoading,
+        pollsEnriched,
         /* expose nothing else – posts now live in PostContext */
       }}
     >

@@ -1,4 +1,3 @@
-// src/App.jsx
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { useAuth0 } from '@auth0/auth0-react'
 import { useEffect, useState } from 'react'
@@ -7,29 +6,34 @@ import Header from './components/Header'
 import NavBar from './components/NavBar'
 import HomePage from './pages/HomePage'
 import CreatePost from './pages/CreatePost'
-import ProfilePage from './pages/ProfilePage';
-import { PollProvider } from './context/PollContext';
-import PublicProfilePage from './pages/PublicProfilePage';
-import { PostProvider } from './context/PostContext'; 
-
+import ProfilePage from './pages/ProfilePage'
+import { PollProvider } from './context/PollContext'
+import PublicProfilePage from './pages/PublicProfilePage'
+import { PostProvider } from './context/PostContext'
 
 function App() {
-  const { isAuthenticated, user, isLoading } = useAuth0() // added isLoading
+  const { isAuthenticated, user, isLoading } = useAuth0()
   const [localUser, setLocalUser] = useState(() => {
     const stored = localStorage.getItem('localUser')
     return stored ? JSON.parse(stored) : null
   })
 
+  const [userSyncLoading, setUserSyncLoading] = useState(true) // 👈 Guard loading
+
   useEffect(() => {
-    if (!isLoading) {
-      if (isAuthenticated && user) {
-        checkOrAddUser(user)
-      } else {
-        // ✅ Clear the cached localUser if auth0 says not authenticated
-        setLocalUser(null)
-        localStorage.removeItem('localUser')
+    const syncUser = async () => {
+      if (!isLoading) {
+        if (isAuthenticated && user) {
+          await checkOrAddUser(user)
+        } else {
+          setLocalUser(null)
+          localStorage.removeItem('localUser')
+        }
+        setUserSyncLoading(false) // 👈 Set loading false after API
       }
     }
+
+    syncUser()
   }, [isLoading, isAuthenticated, user])
 
   async function checkOrAddUser(auth0User) {
@@ -48,16 +52,13 @@ function App() {
     }
   }
 
-  // ✅ Only render once everything is ready
-  const authReady = !isLoading && (localUser || !isAuthenticated)
-  if (!authReady) return <div>Loading...</div>
+  const authReady = !isLoading && !userSyncLoading && (localUser || !isAuthenticated)
 
-  
+  if (!authReady) return <div>Loading...</div> // 👈 Don't render until fully ready
 
   return (
     <PostProvider localUser={localUser}>
-    <PollProvider localUser={localUser}>
-      
+      <PollProvider localUser={localUser}>
         <BrowserRouter>
           <Header localUser={localUser} />
           <NavBar />
@@ -65,10 +66,10 @@ function App() {
             <Route path="/" element={<HomePage localUser={localUser} />} />
             <Route path="/create-post" element={<CreatePost localUser={localUser} />} />
             <Route path="/profile" element={<ProfilePage localUser={localUser} authUser={user} />} />
-            <Route path="/profile/:userId" element={<PublicProfilePage localUser={localUser} />} /> 
+            <Route path="/profile/:userId" element={<PublicProfilePage localUser={localUser} />} />
           </Routes>
         </BrowserRouter>
-    </PollProvider>
+      </PollProvider>
     </PostProvider>
   )
 }

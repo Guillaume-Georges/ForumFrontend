@@ -1,6 +1,6 @@
 // frontend/src/pages/CreatePost.jsx
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import api from '../api'
 import { useNavigate } from 'react-router-dom'
 import SimpleMDE from 'react-simplemde-editor'
@@ -28,18 +28,22 @@ function CreatePost({ localUser }) {
   const userId = localUser.id;
 
   // Editor options for SimpleMDE (ensuring consistency with CommentSection)
-  const editorOptions = {
-    placeholder: 'Enter post description here...',
-    spellChecker: false,
-    toolbar: [
-      'bold', 'italic', 'strikethrough', '|',
-      'heading', 'quote', 'code', '|',
-      'unordered-list', 'ordered-list', '|',
-      'link', '|',
-      'undo', 'redo'
-    ],
-    status: false,
-  };
+  /* 1️⃣  Memoise the options so the reference never changes */
+  const editorOptions = useMemo(() => ({
+    placeholder: 'Enter post description here…',
+      spellChecker: false,
+      toolbar: [
+        'bold', 'italic', 'strikethrough', '|',
+        'heading', 'quote', 'code', '|',
+        'unordered-list', 'ordered-list', '|',
+        'link', '|',
+        'undo', 'redo'
+      ],
+      status: false,
+      /*  optional – makes the first focus automatic and
+          also masks any brief unmount/mount jitter */
+      autofocus: true
+    }), []);
 
   // --- Draft Saving Logic ---
   // Load saved draft data when the component mounts
@@ -95,6 +99,11 @@ function CreatePost({ localUser }) {
   const handleAddOption = () => {
     setPollOptions([...pollOptions, '']);
   };
+
+  
+  const handleDescriptionChange = useCallback((val) => {
+      setDescription(val);
+    }, []);
 
   const handleRemoveOption = (index) => {
     const updated = [...pollOptions];
@@ -184,7 +193,7 @@ function CreatePost({ localUser }) {
           <label>Description:</label>
           <SimpleMDE
             value={description}
-            onChange={setDescription}
+            onChange={handleDescriptionChange}
             options={editorOptions}
           />
         </div>
