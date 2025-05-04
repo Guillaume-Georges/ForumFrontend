@@ -8,9 +8,15 @@ import PollBlock from './PollBlock';
 import PostContext from '../context/PostContext';
 import PollContext from '../context/PollContext';
 import CommentSection from './CommentSection';
+import useLoginGate from '../hooks/useLoginGate';
+import { Flag } from 'lucide-react';          
+import useFlagModal from '../hooks/useFlagModal';
+import '../styles/postCard.css';
 
 
 function PostCard({ post, userId, onVote, onPostDeleted, onCustomVote, localUser, showComments = true }) {
+  const { flag, FlagModal } = useFlagModal(localUser);
+  const { guard, LoginModal } = useLoginGate(localUser);
   const optionsRef = useRef(); 
   const poll = post.poll;
   const [chosenOption, setChosenOption] = useState(null);
@@ -80,14 +86,20 @@ function PostCard({ post, userId, onVote, onPostDeleted, onCustomVote, localUser
     return () => window.removeEventListener('post-vote', handler);
   }, [post.id]);
 
-  const toggleUp = () => {
-    const newVal = myVote === 1 ? 0 : 1;   // un‑vote if already up
-    vote(post.id, newVal);
-  };
-  const toggleDown = () => {
-    const newVal = myVote === -1 ? 0 : -1;
-    vote(post.id, newVal);
-  };
+  const doToggleUp   = () => {
+        const newVal = myVote === 1 ? 0 : 1;
+        vote(post.id, newVal);
+      };
+
+  const doToggleDown = () => {
+        const newVal = myVote === -1 ? 0 : -1;
+        vote(post.id, newVal);
+      };
+  
+  const toggleUp   = () => guard(doToggleUp);
+
+  const toggleDown = () => guard(doToggleDown);
+  
 
   function startEditing(comment) {
     setEditingCommentId(comment.id);
@@ -163,69 +175,68 @@ function PostCard({ post, userId, onVote, onPostDeleted, onCustomVote, localUser
               )}
             </div>
           </div>
-  
-          {/* ← Right side: vote buttons + ⋮ menu */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-  
-            {/* your vote buttons */}
+
+          {/* header right side */}
+          <div style={{ display:'flex', alignItems:'center', gap:'0.5rem' }}>
+            {/* ▼▼▼  put this block back  ▼▼▼ */}
             <div className="vote-col">
               <button
-                className={`vote-btn up ${myVote === 1 ? 'voted' : ''}`}
+                className={`vote-btn up ${myVote === 1 ? 'voted' : ''} ${busy ? 'syncing' : ''}`}
                 disabled={busy}
                 onClick={toggleUp}
-              >▲</button>
+              >
+                ▲
+              </button>
+
               <div className="score">{score}</div>
+
               <button
-                className={`vote-btn down ${myVote === -1 ? 'voted' : ''}`}
+                className={`vote-btn down ${myVote === -1 ? 'voted' : ''} ${busy ? 'syncing' : ''}`}
                 disabled={busy}
                 onClick={toggleDown}
-              >▼</button>
+              >
+                ▼
+              </button>
             </div>
+            {/* ▲▲▲ vote buttons restored ▲▲▲ */}
   
-            {/* the 3‑dots menu */}
-            {(post.user_id === userId || localUser?.role === 'admin') && (
-              <div style={{ position: 'relative' }} ref={optionsRef}>
-                <button
-                  onClick={() => setShowOptions(o => !o)}
-                  style={{
-                    background: 'none',
-                    border:     'none',
-                    padding:    '0.25rem',
-                    fontSize:   '1.25rem',
-                    cursor:     'pointer'
-                  }}
-                  title="More options"
-                >⋮</button>
-  
-                {showOptions && (
+          {/* 3-dots menu (always rendered) */}
+          <div className="post-moreWrap" ref={optionsRef} style={{position:'relative'}}>
+            <button
+              className="post-moreBtn"
+              onClick={() => setShowOptions(o => !o)}
+              title="More options"
+            >
+              ⋮
+            </button>
+
+            {showOptions && (
+              <div className="options-menu">
+                {/* report – visible to everyone */}
+                <div
+                  className="options-menu__item"
+                  onClick={() => { flag('post', post.id); setShowOptions(false); }}
+                >
+                  <Flag size={14}/> Report post
+                </div>
+
+                {/* delete – owner or admin */}
+                {(post.user_id === userId || localUser?.role === 'admin') && (
                   <div
-                    className="options-menu"
-                    style={{
-                      position:   'absolute',
-                      top:        '100%',
-                      right:      0,
-                      background: '#fff',
-                      border:     '1px solid #ccc',
-                      borderRadius:'4px',
-                      boxShadow:  '0 2px 5px rgba(0,0,0,0.15)',
-                      zIndex:     10,
-                    }}
+                    className="options-menu__item options-menu__item--danger"
+                    onClick={handleDeletePost}
                   >
-                    <div
-                      onClick={handleDeletePost}
-                      style={{
-                        padding: '0.5rem 1rem',
-                        color:   'red',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      Delete Post
-                    </div>
+                    Delete post
                   </div>
                 )}
               </div>
             )}
           </div>
+
+         
+        </div>
+        {FlagModal()}
+        {LoginModal}
         </div>
 
       <div className="post-card-title">{post.title}</div>
@@ -257,6 +268,7 @@ function PostCard({ post, userId, onVote, onPostDeleted, onCustomVote, localUser
         onCustomVote={onCustomVote}
         syncing={syncingPolls.has(poll.id)}
         error={pollSyncErrors.get(poll.id)}
+        guard={guard}
       />
       
       )}
@@ -266,16 +278,12 @@ function PostCard({ post, userId, onVote, onPostDeleted, onCustomVote, localUser
           postId={post.id}
           userId={userId}
           localUser={localUser}
+          guard={guard}
         />
       )}
-
-      
-
-      <div className="post-card-footer">
-        <div>10 comments</div>
-        <div>Last reply 10 hours ago</div>
-      </div>
     </div>
+
+ 
   );
 }
 

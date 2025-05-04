@@ -1,0 +1,32 @@
+.comment‑like {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 6px;
+    background: #e5e7eb;              /* gray‑200 */
+    cursor: pointer;
+    transition: background 120ms ease, transform 120ms ease;
+    font-size: 1rem;                  /* emoji size */
+  }
+  
+  .comment‑like:hover {
+    background: #d1d5db;              /* gray‑300 */
+  }
+  
+  .comment‑like:active {
+    transform: scale(0.95);
+  }
+  
+  .comment‑like--on {                 /* when user has liked */
+    background: #fde047;              /* yellow‑300 */
+  }
+  
+  .comment-like__count{
+    margin-left: 4px;
+    font-size: .85rem;
+    font-weight: 600;
+    color:#555;
+  }

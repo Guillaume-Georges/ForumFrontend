@@ -7,13 +7,18 @@ import ReactMarkdown from 'react-markdown';
 import PersonImage from '../assets/PersonIcon.png';
 import 'easymde/dist/easymde.min.css';
 import PostContext from '../context/PostContext';
+import '../styles/commentLike.css';
+import useFlagModal from '../hooks/useFlagModal';
 
-function CommentSection({ postId, userId, localUser }) {
+function CommentSection({ postId, userId, localUser, guard  }) {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
   const [showEditor, setShowEditor] = useState(false);
   const editorRef = useRef(null);
   const { setPosts, setLatestPosts } = React.useContext(PostContext);
+  const { flag, FlagModal } = useFlagModal(localUser);
+  const [menuOpen, setMenuOpen] = useState(null);
+  const menuRef = useRef(null);
 
   /* edit / admin state */
   const [editingId,    setEditingId]    = useState(null);
@@ -21,15 +26,36 @@ function CommentSection({ postId, userId, localUser }) {
   const isAdmin = localUser?.role === 'admin';
 
   /* ─────────────────── fetch comments ─────────────────── */
+useEffect(() => {
+  api.get(`/comments/post/${postId}`)
+    .then(res => {
+      const enriched = res.data.map(c => ({
+        ...c,
+        user_liked:
+          Array.isArray(c.voters) &&
+          c.voters.some(v => v.user_id === userId)   // ← derive the flag
+      }));
+      setComments(enriched);
+    })
+    .catch(console.error);
+}, [postId, userId]);   // ← include userId so it re-runs after login
+
+  /* ─────────────────── Menu ─────────────────── */
   useEffect(() => {
-    api.get(`/comments/post/${postId}`)
-      .then(res => setComments(res.data))
-      .catch(console.error);
-  }, [postId]);
+    if (menuOpen == null) return;          
+  
+    function closeIfOutside(e) {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setMenuOpen(null);
+      }
+    }
+  
+    document.addEventListener('mousedown', closeIfOutside);
+    return () => document.removeEventListener('mousedown', closeIfOutside);
+  }, [menuOpen]);
 
   /* ─────────────────── add comment ─────────────────── */
-  const handleAddComment = async () => {
-    if (!userId) return alert('Please log in.');
+  const doAddComment = async () => {
     if (!newComment.trim()) return;
 
     try {
@@ -77,38 +103,44 @@ function CommentSection({ postId, userId, localUser }) {
     }
   };
 
+  const handleAddComment = () => guard(doAddComment);
+
   /* ─────────────────── vote toggle ─────────────────── */
   const toggleCommentVote = async (comment) => {
     if (!userId) return alert('Please log in to vote.');
-
-    const hasVoted =
+  
+    const alreadyLiked =
       Array.isArray(comment.voters) &&
       comment.voters.some(v => v.user_id === userId);
-
+  
     try {
-      if (hasVoted) {
+      if (alreadyLiked) {
         await api.delete(`/comments/${comment.id}/vote`, {
           data: { user_id: userId }
         });
       } else {
         await api.post(`/comments/${comment.id}/vote`, { user_id: userId });
       }
-
+  
       setComments(prev =>
         prev.map(c => {
           if (c.id !== comment.id) return c;
-
-          const voters = Array.isArray(c.voters) ? c.voters : [];
-          const updatedVoters = hasVoted
-            ? voters.filter(v => v.user_id !== userId)
-            : [...voters, { user_id: userId }];
-
+  
+          /* current voters array */
+          const base = Array.isArray(c.voters) ? c.voters : [];
+  
+          /* build the new voters array */
+          const voters = alreadyLiked
+            ? base.filter(v => v.user_id !== userId)        // 👍 → ❌
+            : [...base, { user_id: userId }];               // ❌ → 👍
+  
           return {
             ...c,
-            voters: updatedVoters,
-            vote_count: hasVoted
-              ? Math.max(c.vote_count - 1, 0)   // ✅ “− 1”
-              : c.vote_count + 1                // ✅ “+ 1”
+            user_liked : !alreadyLiked,
+            vote_count : alreadyLiked
+              ? Math.max(c.vote_count - 1, 0)
+              : c.vote_count + 1,
+            voters
           };
         })
       );
@@ -116,6 +148,7 @@ function CommentSection({ postId, userId, localUser }) {
       console.error('Vote failed', err);
     }
   };
+  
 
   /* ─────────────────── edit helpers ─────────────────── */
   const startEdit = (c) => {
@@ -204,7 +237,7 @@ function CommentSection({ postId, userId, localUser }) {
         const profileLink = `/profile/${c.user_id}`;
 
         return (
-          <div key={c.id} className="comment-block" style={{ display: 'flex', gap: '.5rem', marginBottom: '.75rem' }}>
+          <div key={c.id} className="comment-block" style={{ display: 'flex', gap: '.5rem', marginBottom: '.75rem', position: 'relative' }}>
             <Link to={profileLink}>
               <img
                 src={c.profile_image || PersonImage}
@@ -217,7 +250,7 @@ function CommentSection({ postId, userId, localUser }) {
               />
             </Link>
 
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: 1, position:'relative' }}>
               <strong>{c.user_name}</strong>
 
               {editingId === c.id ? (
@@ -237,19 +270,77 @@ function CommentSection({ postId, userId, localUser }) {
               ) : (
                 <>
                   <ReactMarkdown>{c.content}</ReactMarkdown>
-                  <button onClick={() => toggleCommentVote(c)} style={{ marginLeft: '.5rem' }}>
-                    👍 {c.vote_count}
+                  <button
+                    onClick={() => guard(() => toggleCommentVote(c))}
+                    className={`comment-like ${c.user_liked ? 'comment-like--on' : ''}`}
+                  >
+                    👍
                   </button>
 
-                  {(isAuthor || isAdmin) && (
-                    <>
-                      <button onClick={() => startEdit(c)} style={{ marginLeft: '.5rem' }}>
-                        Edit
-                      </button>
-                      <button onClick={() => handleDeleteComment(c.id)} style={{ marginLeft: '.5rem', color: 'red' }}>
-                        Delete
-                      </button>
-                    </>
+      
+
+                  {/* show only when at least 1 like */}
+                  {c.vote_count > 0 && (
+                    <span className="comment-like__count">{c.vote_count}</span>
+                  )}
+
+                  {/* ⋮ trigger */}
+                  <button
+                    onClick={() => setMenuOpen(menuOpen === c.id ? null : c.id)}
+                    title="More"
+                    style={{
+                      position: 'absolute',
+                      top:   0,
+                      right: 0,
+                      background: 'none',
+                      border: 'none',
+                      padding: 4,
+                      fontSize: '1.25rem',
+                      cursor: 'pointer',
+                      lineHeight: 1
+                    }}
+                  >
+                    ⋮
+                  </button>
+
+                  {/* pop‑up menu */}
+                  {menuOpen === c.id && (
+                    <div
+                      ref={menuRef} 
+                      style={{
+                        position:'absolute', right:0, top:'100%',
+                        background:'#fff', border:'1px solid #ddd',
+                        borderRadius:6, boxShadow:'0 2px 8px rgba(0,0,0,.12)'
+                      }}
+                    >
+                      {/* report – everyone */}
+                      <div
+                        style={{ padding:'0.55rem 1.1rem', cursor:'pointer' }}
+                        onClick={() => { flag('comment', c.id); setMenuOpen(null); }}
+                      >
+                        🚩 Report comment
+                      </div>
+
+                      {/* edit – author only */}
+                      {isAuthor && (
+                        <div
+                          style={{ padding:'0.55rem 1.1rem', cursor:'pointer' }}
+                          onClick={() => { startEdit(c); setMenuOpen(null); }}
+                        >
+                          ✏️ Edit
+                        </div>
+                      )}
+
+                      {/* delete – author or admin */}
+                      {(isAuthor || isAdmin) && (
+                        <div
+                          style={{ padding:'0.55rem 1.1rem', cursor:'pointer', color:'red' }}
+                          onClick={() => { handleDeleteComment(c.id); setMenuOpen(null); }}
+                        >
+                          🗑 Delete
+                        </div>
+                      )}
+                    </div>
                   )}
                 </>
               )}
@@ -317,6 +408,7 @@ function CommentSection({ postId, userId, localUser }) {
           </button>
         </>
       )}
+      <FlagModal />
     </div>
   );
 }

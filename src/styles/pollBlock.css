@@ -1,0 +1,32 @@
+/* ---------- Poll option row ---------- */
+/*  (only if you don’t already have a row class) */
+.poll-row{
+    display:flex;
+    align-items:center;
+    gap:.5rem;
+  }
+  
+  /* ---------- Vote / Un-vote button ---------- */
+  .poll-voteBtn{
+    background:#ddd;
+    border:none;
+    border-radius:4px;
+    font-size:.80rem;
+    font-weight:600;
+    padding:.28rem .70rem;
+    cursor:pointer;
+  
+    white-space:nowrap;   /* ← prevents “Vo / te” break */
+    min-width:60px;       /* enough for “Unvote” everywhere */
+    text-align:center;
+    transition:background .15s;
+  }
+  
+  .poll-voteBtn--on   { background:#66bb6a; color:#fff; }
+  .poll-voteBtn:disabled{opacity:.45;cursor:progress}
+  
+  /* (optional) a tad slimmer on very small phones */
+  @media (max-width:480px){
+    .poll-voteBtn{padding:.22rem .55rem; min-width:52px;}
+  }
+  

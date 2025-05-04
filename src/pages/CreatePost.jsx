@@ -1,10 +1,11 @@
 // frontend/src/pages/CreatePost.jsx
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react'
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import api from '../api'
 import { useNavigate } from 'react-router-dom'
 import SimpleMDE from 'react-simplemde-editor'
 import 'easymde/dist/easymde.min.css'
+import '../styles/createPost.css';
 
 function CreatePost({ localUser }) {
   const navigate = useNavigate();
@@ -20,12 +21,16 @@ function CreatePost({ localUser }) {
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const fileInputRef = useRef(null);
 
-  // Check for a logged in user
-  if (!localUser) {
-    return <div style={{ padding: '1rem', textAlign: 'center' }}>Please log in to create a post.</div>;
-  }
-  const userId = localUser.id;
+  const removeImage = () => {
+    setFile(null);
+    setPreviewUrl(null);
+    // clear the native file input so a user can pick the same file again
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+
 
   // Editor options for SimpleMDE (ensuring consistency with CommentSection)
   /* 1️⃣  Memoise the options so the reference never changes */
@@ -111,6 +116,18 @@ function CreatePost({ localUser }) {
     setPollOptions(updated);
   };
 
+  // 🔐 stop unauthenticated users
+  if (!localUser) {
+    return (
+      <div style={{ padding: '1rem', textAlign: 'center' }}>
+        Please log in to create a post.
+      </div>
+    );
+  }
+
+  /** 👉 add this line back */
+  const userId = localUser.id;
+
   // --- Submit Handler ---
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -162,7 +179,7 @@ function CreatePost({ localUser }) {
       localStorage.removeItem('createPostDraft');
 
       alert('Post created successfully!');
-      navigate('/');
+      window.location.href = '/';
     } catch (err) {
       console.error(err);
       setError(err.message || 'Something went wrong');
@@ -171,103 +188,127 @@ function CreatePost({ localUser }) {
     }
   };
 
+  /* CreatePost.jsx */
   return (
-    <div style={{ padding: '1rem', maxWidth: '700px', margin: '0 auto' }}>
-      <h2>Create a New Post</h2>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-
-      <form onSubmit={handleSubmit}>
+    <section className="cp‑wrap">
+      <h2 className="cp‑title">Create a new post</h2>
+      {error && <p className="cp‑error">{error}</p>}
+  
+      <form className="cp‑form" onSubmit={handleSubmit}>
         {/* Title */}
-        <div style={{ marginBottom: '1rem' }}>
-          <label>Title:</label>
+        <label className="cp‑label">
+          Title
           <input
-            style={{ display: 'block', width: '100%' }}
+            className="cp‑input"
             value={title}
             onChange={e => setTitle(e.target.value)}
             required
           />
-        </div>
-
-        {/* Description using SimpleMDE */}
-        <div style={{ marginBottom: '1rem' }}>
-          <label>Description:</label>
+        </label>
+  
+        {/* Description */}
+        <label className="cp‑label">
+          Description
           <SimpleMDE
             value={description}
             onChange={handleDescriptionChange}
             options={editorOptions}
           />
-        </div>
-
-        {/* Image Upload with Preview */}
-        <div style={{ marginBottom: '1rem' }}>
-          <label>Image (optional):</label>
+        </label>
+  
+        {/* Image upload */}
+        <label className="cp‑label">
+          Image <span className="cp‑optional">(optional)</span>
           <input
             type="file"
+            ref={fileInputRef}          //  ←  attach the ref
             onChange={handleFileChange}
             accept="image/*"
           />
-          {previewUrl && (
-            <div style={{ marginTop: '1rem' }}>
-              <p>Image Preview:</p>
-              <img
-                src={previewUrl}
-                alt="Preview"
-                style={{ maxWidth: '100%', height: 'auto' }}
-              />
-            </div>
-          )}
-        </div>
+        </label>
+  
+        {/* Preview block */}
+        {previewUrl && (
+          <div className="cp-previewWrap">
+            <img className="cp-preview" src={previewUrl} alt="preview" />
 
-        {/* Poll Question */}
-        <div style={{ marginBottom: '1rem' }}>
-          <label>Poll Question (optional):</label>
+            <button
+              type="button"
+              className="cp-removePreview"
+              onClick={removeImage}
+              title="Remove image"
+            >
+              &times;
+            </button>
+          </div>
+        )}
+  
+        {/* Poll question */}
+        <label className="cp‑label">
+          Poll question <span className="cp‑optional">(optional)</span>
           <input
-            style={{ display: 'block', width: '100%' }}
+            className="cp‑input"
             value={pollQuestion}
             onChange={e => setPollQuestion(e.target.value)}
             placeholder="Leave empty if no poll"
           />
-        </div>
-
-        {/* Poll Options */}
+        </label>
+  
+        {/* Poll options */}
         {pollQuestion.trim() && (
-          <div style={{ marginBottom: '1rem', background: '#f9f9f9', padding: '0.5rem' }}>
-            <p>Poll Options:</p>
+          <div className="cp‑pollBox">
             {pollOptions.map((opt, idx) => (
-              <div key={idx} style={{ marginBottom: '0.5rem' }}>
+              <div key={idx} className="cp‑pollRow">
                 <input
-                  style={{ width: '80%' }}
+                  className="cp‑input"
                   value={opt}
                   onChange={e => handlePollOptionChange(idx, e.target.value)}
-                  placeholder={`Option ${idx + 1}`}
+                  placeholder={`Option ${idx + 1}`}
                 />
                 {pollOptions.length > 2 && (
-                  <button type="button" onClick={() => handleRemoveOption(idx)}>
-                    Remove
+                  <button
+                    type="button"
+                    className="cp‑iconBtn"
+                    onClick={() => handleRemoveOption(idx)}
+                    title="Remove option"
+                  >
+                    ✕
                   </button>
                 )}
               </div>
             ))}
-            <button type="button" onClick={handleAddOption}>Add Option</button>
-            <div style={{ marginTop: '0.5rem' }}>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={allowNewOptions}
-                  onChange={e => setAllowNewOptions(e.target.checked)}
-                />
-                Allow users to add new options
-              </label>
-            </div>
+  
+            <button
+              type="button"
+              className="cp‑ghost"
+              onClick={handleAddOption}
+            >
+              + Add option
+            </button>
+  
+            <label className="cp‑checkbox">
+              <input
+                type="checkbox"
+                checked={allowNewOptions}
+                onChange={e => setAllowNewOptions(e.target.checked)}
+              />
+              Allow users to add new options
+            </label>
           </div>
         )}
-
-        <button type="submit" disabled={loading}>
-          {loading ? 'Creating...' : 'Create Post'}
+  
+        <button
+          type="submit"
+          className="cp‑submit"
+          disabled={loading}
+        >
+          {loading ? 'Creating…' : 'Create post'}
         </button>
       </form>
-    </div>
+    </section>
+  
   );
 }
-
 export default CreatePost;
+
+

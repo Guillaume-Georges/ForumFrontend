@@ -1,0 +1,58 @@
+/* full‑screen dimmed backdrop */
+.login‑gate__overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+  
+  /* white card */
+  .login‑gate__card {
+    width: 320px;
+    padding: 2rem 1.75rem;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.15);
+    text-align: center;
+    animation: pop 220ms ease-out;
+  }
+  
+  @keyframes pop {
+    0%   { transform: scale(0.9); opacity: 0; }
+    100% { transform: scale(1);   opacity: 1; }
+  }
+  
+  .login‑gate__title   { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem; }
+  .login‑gate__text    { font-size: 0.925rem; color: #555; margin-bottom: 1.25rem; }
+  
+  .login‑gate__btn {
+    width: 100%;
+    padding: 0.65rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 120ms ease;
+  }
+  
+  .login‑gate__btn--primary {
+    background: #2563eb;         /* indigo‑600 */
+    color: #fff;
+  }
+  .login‑gate__btn--primary:hover {
+    background: #1e4ed8;
+  }
+  
+  .login‑gate__btn--ghost {
+    margin-top: 0.75rem;
+    background: transparent;
+    color: #6b7280;              /* gray‑500 */
+  }
+  .login‑gate__btn--ghost:hover {
+    color: #374151;
+  }
+  

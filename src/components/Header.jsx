@@ -6,18 +6,17 @@ import { useNavigate } from 'react-router-dom'
 import Logo from '../assets/AiEducationForumLogo.png'
 import PersonImage from '../assets/PersonIcon.png'
 
+
 function Header({ localUser }) {
   const { isAuthenticated, isLoading, loginWithRedirect, logout } = useAuth0()
   const navigate = useNavigate()
   const [showDropdown, setShowDropdown] = useState(false)
   const dropdownRef = useRef()
+ 
 
   const { user } = useAuth0()
   const profileImage = localUser?.profile_image || user?.picture || PersonImage
 
-
-  
-  
 
   useEffect(() => {
     const handleClickOutside = (e) => {

@@ -18,20 +18,24 @@ export const PollProvider = ({ localUser, children }) => {
 
   const [syncingPolls,  setSyncingPolls]  = useState(new Set());
   const [pollSyncErrors, setPollSyncErrors] = useState(new Map());
-  const [pollsLoading, setPollsLoading] = useState(true);
-  const [pollsEnriched, setPollsEnriched] = useState(false);
+  const loggedOut = !localUser;
+  const [pollsLoading,  setPollsLoading]  = useState(!loggedOut);
+  const [pollsEnriched, setPollsEnriched] = useState(loggedOut);
+  
+
+
   
 
 /** ------- enrich posts with poll‑vote data whenever feeds load -- */
 useEffect(() => {
     
   // run only once the feeds are loaded *and* a user is known
-  if (!localUser || loading || pollsEnriched) return;
-  if (!posts.length && !latestPosts.length) {
-    setPollsLoading(false);
-    setPollsEnriched(true);
-    return;
-  }
+  if (!localUser) {
+         if (pollsLoading)  setPollsLoading(false);
+         if (!pollsEnriched) setPollsEnriched(true);
+         return;
+     }
+  if (loading || pollsEnriched) return;
 
   const combined = [...posts, ...latestPosts];
   const pollIds  = combined.filter(p => p.poll?.id).map(p => p.poll.id);

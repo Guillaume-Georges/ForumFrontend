@@ -1,168 +1,98 @@
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import api from '../api';
-import PersonImage from '../assets/PersonIcon.png'; // Default avatar
-
-// Basic styling (consider moving to a CSS file)
-const styles = {
-  container: {
-    maxWidth: '900px',
-    margin: '2rem auto',
-    padding: '2rem',
-    backgroundColor: '#f9f9f9',
-    borderRadius: '8px',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-  },
-  profileHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    marginBottom: '2rem',
-    paddingBottom: '1.5rem',
-    borderBottom: '1px solid #eee',
-  },
-  profileImage: {
-    width: '100px',
-    height: '100px',
-    borderRadius: '50%',
-    objectFit: 'cover',
-    marginRight: '1.5rem',
-    border: '3px solid #ddd',
-  },
-  profileInfo: {
-    flexGrow: 1,
-  },
-  profileName: {
-    fontSize: '1.8rem',
-    fontWeight: 'bold',
-    margin: '0 0 0.25rem 0',
-  },
-  postsSection: {
-    marginTop: '2rem',
-  },
-  postsHeader: {
-    fontSize: '1.5rem',
-    marginBottom: '1rem',
-    color: '#333',
-  },
-  loading: {
-    textAlign: 'center',
-    padding: '2rem',
-    fontSize: '1.2rem',
-    color: '#777',
-  },
-  error: {
-    textAlign: 'center',
-    padding: '2rem',
-    fontSize: '1.2rem',
-    color: 'red',
-  },
-  noPosts: {
-    textAlign: 'center',
-    padding: '2rem',
-    color: '#777',
-  },
-};
+import React, { useEffect, useState } from 'react';
+import { useParams }           from 'react-router-dom';
+import api                     from '../api';
+import PersonImage             from '../assets/PersonIcon.png';
+import PostCard                from '../components/PostCard';   // already built
+import SocialLinks from '../components/SocialLinks';
+import '../styles/PublicProfile.css';
 
 function PublicProfilePage({ localUser }) {
-  const { userId } = useParams(); // Get the user ID from the URL parameter
-  const [profileInfo, setProfileInfo] = useState(null);
-  const [userPosts, setUserPosts] = useState([]);
-  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
-  const [isLoadingPosts, setIsLoadingPosts] = useState(true);
-  const [profileError, setProfileError] = useState(null);
-  const [postsError, setPostsError] = useState(null);
+  const { userId } = useParams();
+  const [profile, setProfile] = useState(null);
+  const [posts,   setPosts]   = useState([]);
+  const [state,   setState]   = useState('loading'); // 'loading' | 'ok' | 'error'
+
+  // normalise data so downstream components never crash
+const safePosts = (Array.isArray(posts) ? posts : Object.values(posts || {}))
+.map(p => ({
+  ...p,
+  media: Array.isArray(p.media) ? p.media : [],      // PostCard expects an array
+}));
+
 
   useEffect(() => {
-    console.log('Fetching profile and posts for user ID:', userId);
-
-    // Reset states when userId changes
-    setIsLoadingProfile(true);
-    setIsLoadingPosts(true);
-    setProfileInfo(null);
-    setUserPosts([]);
-    setProfileError(null);
-    setPostsError(null);
-
-    // Fetch profile information
-    api.get(`/users/${userId}`)
-      .then(res => {
-        console.log('Profile fetched:', res.data);  // Log the profile data
-        setProfileInfo(res.data);
-        setProfileError(null);
+    let cancelled = false;
+    setState('loading');
+      api.get(`/users/${userId}/posts`)
+      .then(({ data }) => {
+        if (cancelled) return;
+        const { user, posts } = data;
+        setProfile(user);
+        const raw = posts;
+        setPosts(Array.isArray(raw) ? raw : Object.values(raw));
+        setState('ok');
       })
       .catch(err => {
-        console.error('Failed to load profile info:', err);
-        setProfileError('Could not load profile information.');
-      })
-      .finally(() => {
-        setIsLoadingProfile(false);
+        console.error('Public profile fetch failed:', err);
+        if (!cancelled) setState('error');
       });
 
-    // Fetch user's posts using the NEW backend route
-    // IMPORTANT: Make sure this route exists on your backend!
-    api.get(`/users/${userId}/posts`)
-      .then(res => {
-        console.log('User posts fetched:', res.data);  // Log the posts data
-        setUserPosts(res.data);
-        setPostsError(null);
-      })
-      .catch(err => {
-        console.error('Failed to load user posts:', err);
-        setPostsError('Could not load posts.');
-      })
-      .finally(() => {
-        setIsLoadingPosts(false);
-      });
-  }, [userId]); // Re-run fetches if the userId in the URL changes
+    return () => { cancelled = true; };
+  }, [userId]);
 
-  // Add a loading state that waits until both profile and posts are loaded
-  if (isLoadingProfile || isLoadingPosts) {
-    return <div style={styles.loading}>Loading...</div>;
+  /* ─────────────── UI states ─────────────── */
+  if (state === 'loading') {
+    return (
+      <div className="pp‑skeleton">
+        <div className="pp‑avatar" />
+        <div className="pp‑line w40" />
+        <div className="pp‑line w20" />
+      </div>
+    );
+  }
+  if (state === 'error' || !profile) {
+    return <div className="pp‑error">Could not load this profile.</div>;
   }
 
-  if (profileError) {
-    return <div style={styles.error}>{profileError}</div>;
-  }
-
-  if (postsError) {
-    return <div style={styles.error}>{postsError}</div>;
-  }
-
-  if (!profileInfo) {
-    return <div style={styles.error}>Profile not found.</div>;
-  }
-
+  /* ─────────────── Render ─────────────── */
   return (
-    <div style={styles.container}>
-      {/* Profile Header Section */}
-      <div style={styles.profileHeader}>
+    <div className="pp‑wrap">
+      {/* profile header */}
+      <div className="pp‑header">
         <img
-          src={profileInfo.profile_image || PersonImage}
-          alt={`${profileInfo.name}'s profile`}
-          style={styles.profileImage}
+          src={profile.profile_image || PersonImage}
+          alt="avatar"
+          className="pp‑avatar"
+          onError={e => (e.currentTarget.src = PersonImage)}
         />
-        <div style={styles.profileInfo}>
-          <h1 style={styles.profileName}>{profileInfo.name}</h1>
-          {profileInfo.position && <p>{profileInfo.position}</p>}
+        <div>
+          <h1 className="pp‑name">{profile.name}</h1>
+          {profile.position && <p className="pp‑position">{profile.position}</p>}
+         {/* social icons here so they stack below the text */}
+        <SocialLinks
+          linkedin={profile.linkedin_url}
+          facebook={profile.facebook_url}
+          website={profile.website_url}
+        />
         </div>
       </div>
 
-      {/* Posts Section */}
-      <div style={styles.postsSection}>
-        <h2 style={styles.postsHeader}>{profileInfo.name}'s Posts</h2>
+      {/* posts */}
+      <h2 className="pp‑posts‑title">Posts by {profile.name}</h2>
 
-        {userPosts.length > 0 ? (
-          userPosts.map((post) => (
-            <div key={post.id} style={{ marginBottom: '1.5rem', padding: '1rem', border: '1px solid #ddd', borderRadius: '8px' }}>
-              <h3>{post.title}</h3>
-              <p>{post.description}</p>
-              <div style={{ color: '#777', fontSize: '0.9rem' }}>Posted on: {new Date(post.created_at).toLocaleDateString()}</div>
-            </div>
-          ))
-        ) : (
-          <div style={styles.noPosts}>This user hasn't published any posts yet.</div>
-        )}
-      </div>
+      {safePosts.length === 0 ? (
+        <div className="pp‑no‑posts">This user hasn’t published anything yet.</div>
+      ) : (
+        safePosts.map((p, idx) => (
+          <PostCard
+            key={p.id ?? `u${idx}`} 
+            post={p}
+            userId={localUser?.id || 0}
+            localUser={localUser}
+            showComments={false}
+          />
+        ))
+      )}
     </div>
   );
 }

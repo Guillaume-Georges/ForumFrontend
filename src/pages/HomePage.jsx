@@ -1,10 +1,11 @@
 //frontend\src\pages\HomePage.jsx
 
-import React, { useContext } from 'react';
+import React, { useContext, useEffect } from 'react';
 import MainFeed     from '../components/MainFeed';
 import LatestPosts  from '../components/LatestPosts';
 import PostContext  from '../context/PostContext';
 import PollContext from '../context/PollContext';
+import Loading from '../components/Loading';
 
 function HomePage({ localUser }) {
   const { posts, latestPosts, setPosts, setLatestPosts, loading  } = useContext(PostContext);
@@ -17,9 +18,8 @@ function HomePage({ localUser }) {
     setLatestPosts(lp => lp.filter(post => post.id !== deletedId));
   };
 
-  if (isPageLoading) { 
-    return <div>Loading...</div>;
-  }
+  if (isPageLoading) return <Loading label="Fetching posts…" />;
+
 
   return (
     <div className="layout">

@@ -10,6 +10,8 @@ import ProfilePage from './pages/ProfilePage'
 import { PollProvider } from './context/PollContext'
 import PublicProfilePage from './pages/PublicProfilePage'
 import { PostProvider } from './context/PostContext'
+import Loading from './components/Loading';
+
 
 function App() {
   const { isAuthenticated, user, isLoading } = useAuth0()
@@ -36,6 +38,7 @@ function App() {
     syncUser()
   }, [isLoading, isAuthenticated, user])
 
+
   async function checkOrAddUser(auth0User) {
     try {
       const payload = {
@@ -43,25 +46,27 @@ function App() {
         name: auth0User.name,
         email: auth0User.email,
         profile_image: auth0User.picture
-      }
-      const res = await api.post('/users/add', payload)
-      setLocalUser(res.data)
-      localStorage.setItem('localUser', JSON.stringify(res.data))
+      };
+  
+      // ① single round‑trip, always safe:
+      const { data } = await api.post('/users/add', payload);
+      setLocalUser(data);
+      localStorage.setItem('localUser', JSON.stringify(data));
     } catch (err) {
-      console.error('Failed to check/add user:', err)
+      console.error('Failed to upsert user:', err);
     }
   }
 
   const authReady = !isLoading && !userSyncLoading && (localUser || !isAuthenticated)
 
-  if (!authReady) return <div>Loading...</div> // 👈 Don't render until fully ready
+  if (!authReady) return <Loading/>;
 
   return (
     <PostProvider localUser={localUser}>
       <PollProvider localUser={localUser}>
         <BrowserRouter>
           <Header localUser={localUser} />
-          <NavBar />
+          <NavBar localUser={localUser} />
           <Routes>
             <Route path="/" element={<HomePage localUser={localUser} />} />
             <Route path="/create-post" element={<CreatePost localUser={localUser} />} />
@@ -73,5 +78,7 @@ function App() {
     </PostProvider>
   )
 }
+
+
 
 export default App

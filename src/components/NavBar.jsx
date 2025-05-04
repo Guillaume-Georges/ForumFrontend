@@ -1,24 +1,36 @@
 // src/components/NavBar.jsx
 import React from 'react'
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
+import useLoginGate from '../hooks/useLoginGate'
 
-function NavBar() {
-  return (
-    <div className="navbar">
-      <div className="navbar-tabs">
-        <button className="active">Discussions</button>
-        <button>Following</button>
-      </div>
-      <div className="navbar-sort">
-        Sort: Latest
-      </div>
-      <button className="navbar-addpost">
-        <Link to="/create-post" style={{ color: '#fff', textDecoration: 'none' }}>
+function NavBar({ localUser }) {
+    const navigate = useNavigate();
+    const { guard, LoginModal } = useLoginGate(localUser);
+  
+    return (
+      <>
+        <div className="navbar">
+          <div className="navbar-tabs">
+            <button
+            className="active"
+            onClick={() => navigate('/')}
+          >
+            Discussions
+          </button>
+            <button>Following</button>
+          </div>
+  
+          <button
+            className="navbar-addpost"
+            onClick={() => guard(() => navigate('/create-post'))}
+          >
             + Add a Post
-        </Link>
-    </button>
-    </div>
-  )
-}
+          </button>
+        </div>
+  
+        {LoginModal}
+      </>
+    );
+  }
 
 export default NavBar

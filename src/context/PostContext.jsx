@@ -60,6 +60,39 @@ export const PostProvider = ({ children, localUser }) => {
       if (!localUser)          return alert('Please sign in to vote');
       if (![1, 0, -1].includes(value)) return;
 
+      // -----------------------------------------------
+      // 1. optimistic UI  ↓
+      // -----------------------------------------------
+      const optimistic = list =>
+        list.map(p => {
+          if (p.id !== postId) return p;
+
+          /** current vote as +1 / 0 / -1 */
+          const prev =
+            p.user_vote_up   ?  1 :
+            p.user_vote_down ? -1 : 0;
+
+          /* same formula the backend uses */
+          const newScore = p.score + (value - prev);
+
+          return {
+            ...p,
+            score: newScore,
+            user_vote_up:   value === 1,
+            user_vote_down: value === -1
+          };
+        });
+
+      setPosts(optimistic);
+      setLatestPosts(optimistic);
+
+      // fire the event immediately so any mounted <PostCard> updates its local state
+      window.dispatchEvent(
+        new CustomEvent('post-vote', {
+          detail: { postId, newScore: null /* not needed */, userVote: value }
+        })
+      );
+
       setUpdating(p => new Set(p).add(postId));
 
       try {

@@ -1,6 +1,8 @@
 // src/pages/ProfilePage.jsx
 import React, { useState, useEffect } from 'react';
 import api from '../api';
+import Loading from '../components/Loading';
+import '../styles/profile.css'; 
 
 function ProfilePage({ localUser, authUser }) {
   const [profile, setProfile] = useState(null);
@@ -32,7 +34,27 @@ function ProfilePage({ localUser, authUser }) {
     .catch(err => alert('Error updating profile'));
   };
 
-  if (!profile) return <div>Loading profile...</div>;
+  async function handleDelete() {
+    const ok = window.confirm(
+      `⚠️  This will permanently erase your account and *everything* you’ve
+       ever posted, voted on or commented.  There is no way to undo this.  
+       Do you really want to continue?`
+    );
+    if (!ok) return;
+  
+    try {
+      await api.delete(`/users/${localUser.id}`, { data: { id: localUser.id } });
+      /* flag the welcome message, then redirect */
+      sessionStorage.setItem('accountDeleted', '1');
+      localStorage.clear();          // wipe cached login
+      window.location.href = '/';    // go to home
+    } catch {
+      alert('Deletion failed — please try again.');
+    }
+  }
+  
+
+  if (!profile) return <Loading label="Loading profile…" />;
 
   return (
     <div className="profile-page" style={{ padding: '2rem' }}>
@@ -102,13 +124,23 @@ function ProfilePage({ localUser, authUser }) {
       />
     </div>
 
+    {/* Profile actions */}
+    <div className="profile-actions">
+      <button
+        className="btn btn--danger"
+        onClick={handleDelete}
+      >
+        Delete my account
+      </button>
 
       <button
+        className="btn btn--primary"
         onClick={handleSave}
-        style={{ padding: '0.75rem 1.5rem', background: '#007bff', color: 'white', border: 'none', borderRadius: '4px' }}
       >
-        Save Changes
+        Save changes
       </button>
+    </div>
+    
     </div>
   );
 }

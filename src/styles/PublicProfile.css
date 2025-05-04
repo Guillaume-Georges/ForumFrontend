@@ -1,0 +1,74 @@
+.pp‑wrap {
+    max-width: 900px;
+    margin: 2rem auto;
+    padding: 1.5rem;
+  }
+  
+  .pp‑header {
+    display: flex;
+    gap: 1.25rem;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  
+  .pp‑avatar {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #e5e7eb;
+  }
+  
+  /* text */
+  .pp‑name      { font-size: 1.75rem; font-weight: 700; margin: 0; }
+  .pp‑position  { margin: 0.1rem 0 0; color: #6b7280; }
+  
+  /* posts */
+  .pp‑posts‑title { font-size: 1.35rem; margin-bottom: 1rem; }
+  .pp‑no‑posts    { color: #6b7280; text-align: center; margin: 3rem 0; }
+  
+  /* quick skeleton loader */
+  .pp‑skeleton {
+    max-width: 900px;
+    margin: 2rem auto;
+    padding: 1.5rem;
+  }
+  .pp‑line {
+    height: 14px;
+    background: #e5e7eb;
+    border-radius: 6px;
+    margin: 0.5rem 0;
+    animation: shimmer 1.3s linear infinite;
+  }
+  .pp‑line.w40 { width: 40%; }
+  .pp‑line.w20 { width: 20%; }
+  @keyframes shimmer {
+    0%   { background-position: -500px 0; }
+    100% { background-position: 500px 0; }
+  }
+  .pp‑error { color: red; text-align: center; margin-top: 3rem; }
+  
+
+  .pp‑links {
+    display: flex;
+    gap: 0.65rem;
+    margin-top: 0.4rem;
+  }
+  .pp‑links a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.25rem 0.5rem;
+    background: #f3f4f6;              /* gray‑100 */
+    color: #374151;                   /* gray‑700 */
+    border-radius: 6px;
+    font-size: 0.8rem;
+    text-decoration: none;
+    transition: background 120ms ease;
+  }
+  .pp‑links a:hover { background: #e5e7eb; }        /* gray‑200 */
+  .pp‑links svg     { font-size: 1rem; }
+  .pp‑link‑text      { max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  
