@@ -20,7 +20,7 @@ export default function Footer() {
           <ul>
             <li>
               <a
-                href="https://github.com/your-org/your-repo"
+                href="https://github.com/orgs/ScholarTalksOrg/repositories"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -29,7 +29,7 @@ export default function Footer() {
             </li>
             <li>
               <a
-                href="https://github.com/your-org/your-repo/issues"
+                href="https://github.com/orgs/ScholarTalksOrg/discussions"
                 target="_blank"
                 rel="noopener noreferrer"
               >
