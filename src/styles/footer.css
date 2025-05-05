@@ -1,0 +1,56 @@
+/* ───────── Footer Styles ───────── */
+.footer {
+    background: #ffffff;
+    border-top: 1px solid #e5e7eb;        /* gray‑200 */
+    padding: 2rem 1rem;
+    color: #374151;                       /* gray‑700 */
+  }
+  .footer-container {
+    max-width: 1280px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+  }
+  .footer h4,
+  .footer h5 {
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+  }
+  .footer p {
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+  .footer ul {
+    list-style: none;
+    padding: 0;
+  }
+  .footer a {
+    color: inherit;
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+  .footer a:hover {
+    color: #2563eb;                       /* indigo‑600 */
+  }
+  .footer-bottom {
+    text-align: center;
+    margin-top: 2rem;
+    font-size: 0.875rem;
+    color: #6b7280;                       /* gray‑500 */
+  }
+  
+  /* ───────── Mobile Tweaks (up to 640px) ───────── */
+  @media (max-width: 640px) {
+    .footer {
+      padding: 1.5rem 1rem;
+    }
+    .footer-container {
+      grid-template-columns: 1fr;
+      text-align: center;
+    }
+    .footer-container > div {
+      margin-bottom: 1.5rem;
+    }
+  }
+  

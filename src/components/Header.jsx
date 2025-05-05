@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useAuth0 } from '@auth0/auth0-react'
 import { useNavigate } from 'react-router-dom'
-import Logo from '../assets/AiEducationForumLogo.png'
+import Logo from '../assets/ScholarTalks.png'
 import PersonImage from '../assets/PersonIcon.png'
 
 

@@ -11,6 +11,7 @@ import { PollProvider } from './context/PollContext'
 import PublicProfilePage from './pages/PublicProfilePage'
 import { PostProvider } from './context/PostContext'
 import Loading from './components/Loading';
+import Footer        from './components/Footer';
 
 
 function App() {
@@ -73,6 +74,7 @@ function App() {
             <Route path="/profile" element={<ProfilePage localUser={localUser} authUser={user} />} />
             <Route path="/profile/:userId" element={<PublicProfilePage localUser={localUser} />} />
           </Routes>
+          <Footer />
         </BrowserRouter>
       </PollProvider>
     </PostProvider>
