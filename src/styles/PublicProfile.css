@@ -72,3 +72,22 @@
   .pp‑links svg     { font-size: 1rem; }
   .pp‑link‑text      { max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   
+
+@media (max-width: 640px) {
+
+  /* 1 ▸ make header stack */
+  .pp‑header        { flex-direction: column; align-items: center; text-align: center; gap: .75rem; }
+
+  /* 2 ▸ smaller avatar on phones */
+  .pp‑avatar        { width: 72px; height: 72px; }
+
+  /* 3 ▸ let social buttons wrap neatly */
+  .pp‑links         { justify-content: center; flex-wrap: wrap; }
+
+  /* 4 ▸ tighten page padding */
+  .pp‑wrap          { padding: 1rem .75rem; }
+
+  /* 5 ▸ cards: a bit less padding so they breathe */
+  .post-card        { padding: 1rem; font-size: .95rem; }
+  .vote-col         { flex-direction: column; gap: 0; }   /* optional: vertical votes to save width */
+}
