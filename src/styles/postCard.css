@@ -1,46 +1,170 @@
-/* ───────── 3-dots trigger ───────── */
-.post-moreBtn{
-    background:none;
-    border:none;
-    padding:.25rem;
-    font-size:1.25rem;
-    cursor:pointer;
+/* ---------- Modern card container ---------- */
+.post-card {
+  background: #ffffff;                 /* white card on light grey page */
+  border: 1px solid #e5e7eb;           /* neutral border (Tailwind gray-200) */
+  border-radius: 16px;                 /* smooth rounded corners */
+  padding: 1.5rem 2rem;                /* roomy interior */
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.04); /* soft drop shadow */
+  margin-bottom: 2rem;                 /* gap to next card */
+  overflow: hidden;                    /* keep inner img corners rounded */
+  transition: box-shadow 0.2s ease;
+}
+
+.post-card:hover {
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.08);
+}
+
+/* ---------- Header ---------- */
+.post-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+
+/* last child of header = vote col + menu */
+.post-card-header > div:last-child {
+  display:   flex;
+  align-items:center;
+  gap:       0.6rem;   /* space between ▲▼ and ⋮ */
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.user-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* ---------- Voting column ---------- */
+.vote-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.875rem;
+}
+
+.vote-btn {
+  border: none;
+  background: transparent;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  color: #9ca3af; /* gray-400 */
+  transition: color 0.15s;
+}
+
+.vote-btn.voted,
+.vote-btn:hover {
+  color: #1d4ed8; /* blue-700 */
+}
+
+.vote-btn.syncing {
+  pointer-events: none;
+  opacity: 0.4;
+}
+
+.score {
+  font-weight: 600;
+}
+
+.post-card.post-card {
+  padding: 1.5rem 2rem !important;  /* roomy interior */
+  overflow: visible;                /* let the 3-dot menu escape */
+}
+
+/* ---------- 3-dot menu ---------- */
+.post-moreBtn {
+  background: transparent;
+  border: none;
+  font-size: 1.25rem;
+  cursor: pointer;
+  color: #6b7280; /* gray-500 */
+}
+
+.post-moreWrap {
+  position: relative;       /* restore old behaviour */
+  display: flex;
+  align-items: center;
+}
+
+.options-menu {
+  position: absolute;
+  top: 120%;
+  right: 0;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  border-radius: 8px;
+  min-width: 160px;
+  z-index: 20;
+}
+
+.options-menu__item {
+  font-size: 0.875rem;
+  padding: 0.55rem 0.9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.options-menu__item:hover {
+  background: #f3f4f6; /* gray-100 */
+}
+
+.options-menu__item--danger {
+  color: #b91c1c;       /* red-700 */
+}
+
+/* ---------- Title & Markdown body ---------- */
+.post-card-title {
+  font-size: 1.375rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+  line-height: 1.3;
+}
+
+.post-card-description > *:first-child {
+  margin-top: 0; /* remove top margin from first MD element */
+}
+
+.post-card-description {
+  /* prose styles come from Tailwind Typography (if you enabled it) */
+  margin-bottom: 1.25rem;
+  padding-left: 0.25rem
+}
+
+/* ---------- Media ---------- */
+.post-media {
+  display: block;
+  width: 100%;
+  border-radius: 12px;
+  margin: 1rem 0;
+}
+
+/* ---------- Responsive tweaks ---------- */
+@media (max-width: 640px) {
+  .post-card {
+    padding: 1rem 1.25rem;
+    border-radius: 12px;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.03);
   }
-  
-  /* ───────── pop-up menu box ───────── */
-  .options-menu{
-    position:absolute;
-    top:100%;
-    right:0;
-    background:#fff;
-    border:1px solid #ccc;
-    border-radius:4px;
-    box-shadow:0 2px 5px rgba(0,0,0,.15);
-    z-index:10;
-  
-    /* keeps labels on one line on mobile */
-    width:max-content;
-    white-space:nowrap;
-    min-width:110px;     /* optional */
+
+  .post-card-title {
+    font-size: 1.25rem;
   }
-  
-  /* each row inside */
-  .options-menu__item{
-    padding:.5rem 1rem;
-    cursor:pointer;
-    display:flex;
-    align-items:center;
-    gap:.4rem;
-    font-size:.9rem;
+
+  .user-avatar {
+    width: 36px;
+    height: 36px;
   }
-  .options-menu__item:hover{background:#f3f4f6;}   /* subtle hover */
-  
-  /* delete row */
-  .options-menu__item--danger{color:#dc2626;}
-  
-  /* ─── mobile tweak ─── */
-  @media(max-width:640px){
-    .options-menu{right:.25rem;}
-    .options-menu__item{padding:.45rem .9rem;}
-  }
-  
+}

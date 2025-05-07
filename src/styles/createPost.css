@@ -78,6 +78,11 @@
 }
 .cp-removePreview:hover{ background:#ef4444; }
 
+.cp-label .EasyMDEContainer,
+.cp-label .CodeMirror {
+  font-weight: normal !important;
+}
+
 /* ------------ image preview ------------- */
 .cp-previewWrap{
   position: relative;

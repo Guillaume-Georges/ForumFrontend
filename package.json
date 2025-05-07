@@ -23,6 +23,9 @@
     "react-simplemde-editor": "^5.2.0",
     "react-spinners": "^0.17.0",
     "react-toastify": "^11.0.5",
+    "rehype-sanitize": "^6.0.0",
+    "remark-breaks": "^4.0.0",
+    "remark-gfm": "^4.0.1",
     "simplemde": "^1.11.2"
   },
   "devDependencies": {

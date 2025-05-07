@@ -207,14 +207,15 @@ function CreatePost({ localUser }) {
         </label>
   
         {/* Description */}
-        <label className="cp‑label">
+        <label htmlFor="description" className="cp-label">
           Description
-          <SimpleMDE
-            value={description}
-            onChange={handleDescriptionChange}
-            options={editorOptions}
-          />
         </label>
+        <SimpleMDE
+          id="description"
+          value={description}
+          onChange={handleDescriptionChange}
+          options={editorOptions}
+        />
   
         {/* Image upload */}
         <label className="cp‑label">

@@ -1,8 +1,12 @@
 //frontend\src\components\PostCard.jsx
 
 import React, { useState, useEffect, useContext, useRef  } from 'react';
-import api from '../api';
 import { Link } from 'react-router-dom';
+import api from '../api';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm           from 'remark-gfm';        // ★
+import remarkBreaks        from 'remark-breaks';     // ★
+import rehypeSanitize      from 'rehype-sanitize';   // ★
 import PersonImage from '../assets/PersonIcon.png';
 import PollBlock from './PollBlock'; 
 import PostContext from '../context/PostContext';
@@ -143,65 +147,69 @@ function PostCard({ post, userId, onVote, onPostDeleted, onCustomVote, localUser
     }
   };
 
-    return (
-      <div className="post-card">
-        {/* ─────────── The header ─────────── */}
+  return (
+    <div className="post-card">
+      {/* ─────────── HEADER ─────────── */}
+      <div className="post-card-header">
+        {/* ← Avatar + author */}
         <div
-          className="post-card-header"
-          style={{
-            display:        'flex',
-            alignItems:     'center',
-            justifyContent: 'space-between'
-          }}
+          className="user-info"
         >
-          {/* ← Left side: avatar + author */}
-          <div className="user-info" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <Link to={`/profile/${post.user_id}`}>
             <img
               src={post.profile_image || PersonImage}
               alt="User Avatar"
               className="user-avatar"
               referrerPolicy="no-referrer"
-              onError={e => { e.target.onerror = null; e.target.src = PersonImage; }}
-              style={{ cursor: 'pointer' }}
+              onError={e => {
+                e.target.onerror = null;
+                e.target.src = PersonImage;
+              }}
             />
-            </Link>
-            <div>
-              <strong>{post.author}</strong>
-              {post.author_position && (
-                <div style={{ fontSize: '0.8rem', color: '#666' }}>
-                  {post.author_position}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* header right side */}
-          <div style={{ display:'flex', alignItems:'center', gap:'0.5rem' }}>
-            {/* ▼▼▼  put this block back  ▼▼▼ */}
-            <div className="vote-col">
-              <button
-                className={`vote-btn up ${myVote === 1 ? 'voted' : ''} ${busy ? 'syncing' : ''}`}
-                disabled={busy}
-                onClick={toggleUp}
-              >
-                ▲
-              </button>
-
-              <div className="score">{score}</div>
-
-              <button
-                className={`vote-btn down ${myVote === -1 ? 'voted' : ''} ${busy ? 'syncing' : ''}`}
-                disabled={busy}
-                onClick={toggleDown}
-              >
-                ▼
-              </button>
-            </div>
-            {/* ▲▲▲ vote buttons restored ▲▲▲ */}
+          </Link>
   
-          {/* 3-dots menu (always rendered) */}
-          <div className="post-moreWrap" ref={optionsRef} style={{position:'relative'}}>
+          <div>
+            <strong>{post.author}</strong>
+            {post.author_position && (
+              <div style={{ fontSize: '0.8rem', color: '#666' }}>
+                {post.author_position}
+              </div>
+            )}
+          </div>
+        </div>
+  
+        {/* → Vote buttons + 3-dot menu */}
+        <div>
+          {/* vote column */}
+          <div className="vote-col">
+            <button
+              className={`vote-btn up ${myVote === 1 ? 'voted' : ''} ${
+                busy ? 'syncing' : ''
+              }`}
+              disabled={busy}
+              onClick={toggleUp}
+            >
+              ▲
+            </button>
+  
+            <div className="score">{score}</div>
+  
+            <button
+              className={`vote-btn down ${myVote === -1 ? 'voted' : ''} ${
+                busy ? 'syncing' : ''
+              }`}
+              disabled={busy}
+              onClick={toggleDown}
+            >
+              ▼
+            </button>
+          </div>
+  
+          {/* 3-dot options */}
+          <div
+            className="post-moreWrap"
+            ref={optionsRef}
+          >
             <button
               className="post-moreBtn"
               onClick={() => setShowOptions(o => !o)}
@@ -209,17 +217,20 @@ function PostCard({ post, userId, onVote, onPostDeleted, onCustomVote, localUser
             >
               ⋮
             </button>
-
+  
             {showOptions && (
               <div className="options-menu">
-                {/* report – visible to everyone */}
+                {/* report – everyone */}
                 <div
                   className="options-menu__item"
-                  onClick={() => { flag('post', post.id); setShowOptions(false); }}
+                  onClick={() => {
+                    flag('post', post.id);
+                    setShowOptions(false);
+                  }}
                 >
-                  <Flag size={14}/> Report post
+                  <Flag size={14} /> Report post
                 </div>
-
+  
                 {/* delete – owner or admin */}
                 {(post.user_id === userId || localUser?.role === 'admin') && (
                   <div
@@ -232,47 +243,69 @@ function PostCard({ post, userId, onVote, onPostDeleted, onCustomVote, localUser
               </div>
             )}
           </div>
-
-         
         </div>
-        {FlagModal()}
-        {LoginModal}
-        </div>
-
+      </div>
+      {/* ────── /HEADER ────── */}
+  
+      {/* modals (render but hidden until triggered) */}
+      {FlagModal()}
+      {LoginModal}
+  
+      {/* ─────────── BODY ─────────── */}
       <div className="post-card-title">{post.title}</div>
-      <div className="post-card-description">{post.description}</div>
 
-      {post.media.map(m =>
-        m.type === 'image' ? (
-          <img
-            key={m.id}
-            src={m.url} // ✅ use media URL here
-            alt="Post media"
-            className="post-media"
-            style={{ maxWidth: '100%', borderRadius: '8px', marginTop: '0.5rem' }}
-            onError={(e) => {
-              e.target.onerror = null;
-              e.target.src = PersonImage;
-            }}
-          />
-        ) : null
-      )}
-
-
+      <div className="post-card-description prose">
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm, remarkBreaks]}
+          rehypePlugins={[rehypeSanitize]}
+          components={{
+                  a: ({node, ...props}) => (
+                    <a {...props} target="_blank" rel="noopener noreferrer" />
+                  ),
+                }}
+        >
+          {post.description || ''}
+        </ReactMarkdown>
+      </div>
+  
+      {/* media images */}
+      {Array.isArray(post.media) &&
+        post.media.map(
+          m =>
+            m.type === 'image' && (
+              <img
+                key={m.id}
+                src={m.url}
+                alt="Post media"
+                className="post-media"
+                style={{
+                  maxWidth: '100%',
+                  borderRadius: '8px',
+                  marginTop: '0.5rem'
+                }}
+                onError={e => {
+                  e.target.onerror = null;
+                  e.target.src = PersonImage;
+                }}
+              />
+            )
+        )}
+  
+      {/* poll block */}
       {poll && (
         <PollBlock
-        poll={poll}
-        postId={post.id}
-        userId={userId}
-        onVote={onVote}
-        onCustomVote={onCustomVote}
-        syncing={syncingPolls.has(poll.id)}
-        error={pollSyncErrors.get(poll.id)}
-        guard={guard}
-      />
-      
+          poll={poll}
+          postId={post.id}
+          userId={userId}
+          onVote={onVote}
+          onCustomVote={onCustomVote}
+          syncing={syncingPolls.has(poll.id)}
+          error={pollSyncErrors.get(poll.id)}
+          guard={guard}
+        />
       )}
-      {/* COMMENTS */}
+  
+      {/* comments */}
       {showComments && (
         <CommentSection
           postId={post.id}
@@ -281,10 +314,10 @@ function PostCard({ post, userId, onVote, onPostDeleted, onCustomVote, localUser
           guard={guard}
         />
       )}
+      {/* ────── /BODY ────── */}
     </div>
-
- 
   );
 }
+  
 
 export default PostCard;
