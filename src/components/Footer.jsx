@@ -1,6 +1,7 @@
 // src/components/Footer.jsx
 import React from 'react';
-import '../styles/footer.css'; // adjust path if your CSS is elsewhere
+import { Link } from 'react-router-dom';          
+import '../styles/footer.css';
 
 export default function Footer() {
   return (
@@ -10,7 +11,7 @@ export default function Footer() {
         <div>
           <h4>ScholarTalks</h4>
           <p>
-            An open‑source forum for educators and experts to discuss AI and ed‑tech.
+            An open-source forum for educators and experts to discuss AI and ed-tech.
           </p>
         </div>
 
@@ -36,13 +37,16 @@ export default function Footer() {
                 Report an Issue
               </a>
             </li>
-            
+            {/* --- NEW --- */}
+            <li>
+              <Link to="/privacy">Privacy&nbsp;Policy</Link>
+            </li>
           </ul>
         </div>
       </div>
 
       <div className="footer-bottom">
-        © 2025 ScholarTalks • Built with ❤️ by our community
+        © 2025 ScholarTalks • Built with ❤️ by our community
       </div>
     </footer>
   );

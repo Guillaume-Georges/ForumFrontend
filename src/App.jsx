@@ -12,6 +12,7 @@ import PublicProfilePage from './pages/PublicProfilePage'
 import { PostProvider } from './context/PostContext'
 import Loading from './components/Loading';
 import Footer        from './components/Footer';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 
 
 function App() {
@@ -73,6 +74,7 @@ function App() {
             <Route path="/create-post" element={<CreatePost localUser={localUser} />} />
             <Route path="/profile" element={<ProfilePage localUser={localUser} authUser={user} />} />
             <Route path="/profile/:userId" element={<PublicProfilePage localUser={localUser} />} />
+            <Route path="/privacy" element={<PrivacyPolicyPage />} />
           </Routes>
           <Footer />
         </BrowserRouter>
