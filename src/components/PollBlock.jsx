@@ -44,72 +44,50 @@ function PollBlock({ poll, postId, userId, guard }) {
       </strong>
 
       {poll.options
-      .filter(o => !(o.additional_option && o.vote_count === 0))
-      .map(option => {
-        const barPercent = totalVotes === 0
-          ? 0
-          : (option.vote_count / totalVotes) * 100;
-        const voters     = option.voters?.slice(0, 5) || [];
+  .filter(o => !(o.additional_option && o.vote_count === 0))
+  .map(option => {
+    const barPercent = totalVotes === 0 ? 0 : (option.vote_count / totalVotes) * 100;
+    const voters     = option.voters?.slice(0, 5) || [];
 
-        return (
-          <div key={option.id} style={{ marginBottom:'1rem' }}>
-            <div className="poll-row">            {/* NEW wrapper class */}
+    return (
+      <div key={option.id} className="poll-row">
+        {/* ───── option text ───── */}
+        <span className="poll-text">{option.text}</span>
 
-              {/* option text */}
-              <span style={{ width: 60 }}>{option.text}</span>
+        {/* ───── bar ───── */}
+        <div className="poll-bar">
+          <div style={{ width: `${barPercent}%` }} />
+        </div>
 
-              {/* bar */}
-              <div style={{
-                width:'60%', height:12, background:'#e0a8a8',
-                borderRadius:8, overflow:'hidden'
-              }}>
-                <div style={{
-                  width:`${barPercent}%`, height:'100%',
-                  background:'#a00000', borderRadius:8,
-                  transition:'width .3s ease'
-                }}/>
-              </div>
+        {/* ───── avatars (up to 5) ───── */}
+        <div className="poll-avatars">
+          {voters.map((v, i) => (
+            <img
+              key={i}
+              src={v.profile_image || PersonImage}
+              title={v.user_name}
+              alt={v.user_name}
+              onError={e => { e.target.src = PersonImage; }}
+            />
+          ))}
+        </div>
 
-              {/* avatars */}
-              <div style={{ display:'flex', marginLeft:'.5rem' }}>
-                {voters.map((v, i) => (
-                  <img
-                    key={i}
-                    src={v.profile_image || PersonImage}
-                    title={v.user_name}
-                    alt={v.user_name}
-                    onError={e => { e.target.src = PersonImage; }}
-                    style={{
-                      width:20, height:20, borderRadius:'50%',
-                      objectFit:'cover', border:'1px solid #fff',
-                      marginLeft: i ? '-8px' : 0, background:'#fff'
-                    }}
-                  />
-                ))}
-              </div>
+        {/* ───── count ───── */}
+        <span className="poll-count">{option.vote_count}</span>
 
-              {/* vote-count */}
-              <span style={{ marginLeft:'.5rem', minWidth:20 }}>
-                {option.vote_count}
-              </span>
-
-              {/* vote / un-vote button */}
-              {(!hasVoted || option.id === votedOption?.id) && (
-                <button
-                  className={
-                    `poll-voteBtn${option.user_voted ? ' poll-voteBtn--on' : ''}`
-                  }
-                  style={{ marginLeft:'auto' }}   /* keep it right-aligned */
-                  disabled={syncing}
-                  onClick={() => handleVoteClick(option.id)}
-                >
-                  {option.user_voted ? 'Unvote' : 'Vote'}
-                </button>
-              )}
-            </div>
-          </div>
-        );
-      })}
+        {/* ───── vote button ───── */}
+        {(!hasVoted || option.id === votedOption?.id) && (
+          <button
+            className={`poll-voteBtn${option.user_voted ? ' poll-voteBtn--on' : ''}`}
+            disabled={syncing}
+            onClick={() => handleVoteClick(option.id)}
+          >
+            {option.user_voted ? 'Unvote' : 'Vote'}
+          </button>
+        )}
+      </div>
+    );
+})}
 
       {poll.allowNewOptions && !hasVoted && (
         <div style={{ marginTop: '0.5rem' }}>

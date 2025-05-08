@@ -1,11 +1,45 @@
 /* ---------- Poll option row ---------- */
-/*  (only if you don’t already have a row class) */
 .poll-row{
-    display:flex;
-    align-items:center;
-    gap:.5rem;
-  }
-  
+  display:grid;
+  /* text | bar | avatars | count | btn */
+  grid-template-columns: minmax(160px,2fr) 5fr auto 36px auto;
+  align-items:center;
+  column-gap:.5rem;
+  margin-bottom:1rem;
+}
+
+/* option text wraps nicely but keeps a min width */
+.poll-text{ word-break:break-word; }
+
+/* vote bar */
+.poll-bar{
+  height:12px;
+  background:#e0a8a8;
+  border-radius:8px;
+  overflow:hidden;
+}
+.poll-bar > div{
+  height:100%;
+  background:#a00000;
+  border-radius:8px;
+  transition:width .3s ease;
+}
+
+/* avatars */
+.poll-avatars{
+  display:flex;
+}
+.poll-avatars img{
+  width:20px; height:20px; border-radius:50%;
+  object-fit:cover; border:1px solid #fff;
+  margin-left:-6px;
+}
+
+/* vote count (right-aligned by template column width) */
+.poll-count{ text-align:right; }
+
+
+
   /* ---------- Vote / Un-vote button ---------- */
   .poll-voteBtn{
     background:#ddd;
@@ -24,9 +58,15 @@
   
   .poll-voteBtn--on   { background:#66bb6a; color:#fff; }
   .poll-voteBtn:disabled{opacity:.45;cursor:progress}
-  
-  /* (optional) a tad slimmer on very small phones */
-  @media (max-width:480px){
-    .poll-voteBtn{padding:.22rem .55rem; min-width:52px;}
+
+  /* ---------- Small screens ---------- */
+@media (max-width:600px){
+  .poll-row{
+    grid-template-columns: 1fr;    /* stack */
+    row-gap:.5rem;
   }
+  .poll-avatars{ order:3; }
+  .poll-count , .poll-voteBtn{ order:4; }
+  .poll-voteBtn{padding:.22rem .55rem; min-width:52px;}
+}
   
